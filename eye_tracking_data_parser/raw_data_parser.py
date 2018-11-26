@@ -4,16 +4,15 @@ import codecs
 import os
 import glob
 
-unpickled_df = pd.read_pickle("bdm_bmm_short_data_df")
 
 flag = 0
 # Set directory name that contains output directory with asc and txt files
-asc_directory = '../row_data/bdm_bmm_short_data/output/asc'
-txt_directory = '../row_data/bdm_bmm_short_data/output/txt'
+asc_directory = '../row_data/scale_ranking_bmm_short_data/output/asc'
+txt_directory = '../row_data/scale_ranking_bmm_short_data/output/txt'
 # Set string represents trail start data records
 indexStartStr = 'TrialStart'  # 'TrialStart'
 # Set string represents trail ends data records
-indexEndStr = 'Response'  # 'ScaleStart'
+indexEndStr = 'ScaleStart'  # 'ScaleStart'
 
 
 # Run over each Ascii file and open it
@@ -67,7 +66,9 @@ allSubjectsData.columns = ['subjectID','trialNum','onsettime','stimName','bid','
 
 
 #Store all subjects data DF as pikle
-allSubjectsData.to_pickle('bdm_bmm_short_data_df')
+allSubjectsData.to_pickle('scale_ranking_bmm_short_data_df.pkl')
+#Store all subjects data DF as CSV
+allSubjectsData.to_csv('scale_ranking_bmm_short_data_df.csv')
 
 #Read pikle into DF
 #file_name = 'bdm_bmm_short_data_df'
