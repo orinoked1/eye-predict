@@ -3,6 +3,9 @@ import pandas as pd
 import codecs
 import os
 import glob
+import numpy as np
+import numpy.random
+import matplotlib.pyplot as plt
 
 
 def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
@@ -71,31 +74,78 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
     #returns path for data csv file
     return data_csv_path
 
-def data_tidying(df):
+def find_stim_boundaries(screen_resolution, stim_resolution):
+    min_x = (screen_resolution[1]/2) - (stim_resolution[1]/2)
+    max_x = (screen_resolution[1]/2) + (stim_resolution[1]/2)
+    min_y = (screen_resolution[0]/2) - (stim_resolution[0]/2)
+    max_y = (screen_resolution[0]/2) + (stim_resolution[0]/2)
+
+    return min_x, max_x, min_y, max_y
+
+
+def data_tidying(df, screen_resolution):
+    # Change X, Y and timeStamp data from String to Numeric changing strings " . ", "EBLINK", FIX", "SACC" to nan
+    df.X_axis = pd.to_numeric(df.X_axis, errors='coerce')
+    df.Y_axis = pd.to_numeric(df.Y_axis, errors='coerce')
+    df.timeStamp = pd.to_numeric(df.timeStamp, errors='coerce')
+    df.X_axis = df.X_axis.round()
+    df.Y_axis = df.Y_axis.round()
     # Remove Nan
-    tidyDf = df.dropna(how='any')
-    # remove strings " . ", "EBLINK", FIX", "SACC" data rows
-    tidyDf = tidyDf[(tidyDf['timeStamp'].str.contains('EFIX', na=False) == False) &
-                    (tidyDf['timeStamp'].str.contains('EBLINK', na=False) == False) &
-                    (tidyDf['timeStamp'].str.contains('ESACC', na=False) == False) &
-                    (tidyDf['timeStamp'].str.contains(' . ', na=False) == False)]
-    tidyDf = tidyDf.reset_index()
-    # Change X, Y and timeStamp data from String to Numeric
-    tidyDf.X_axis = pd.to_numeric(tidyDf.X_axis, errors='coerce')
-    tidyDf.Y_axis = pd.to_numeric(tidyDf.Y_axis, errors='coerce')
-    tidyDf.timeStamp = pd.to_numeric(tidyDf.timeStamp, errors='coerce')
+    df.dropna(inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    #update subjectID to be unique between expirements (fix should be at the raw_data_to_csv def)
+    df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
     # add 'sampleId' field for each uniqe sample
-    tidyDf['sampleId'] = tidyDf['subjectID'].astype(str) + '_' + tidyDf['trialNum'].astype(str) + '_' + tidyDf[
-        'stimId'].astype(str)
-    # Adjust the x,y data points to be within the image frame and in scale of 0-400, rounded
-    tidyDf = tidyDf[(tidyDf['X_axis'] > 760) &
-                                                                (tidyDf['X_axis'] < 1160) &
-                                                                (tidyDf['Y_axis'] > 340) &
-                                                                (tidyDf['Y_axis'] < 740)]
+    df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
 
-    tidyDf.X_axis = tidyDf.X_axis - 760
-    tidyDf.Y_axis = tidyDf.Y_axis - 340
-    tidyDf.X_axis = tidyDf.X_axis.round()
-    tidyDf.Y_axis = tidyDf.Y_axis.round()
 
-    return tidyDf
+    # stim is snack
+    stim_id = 1
+    stim_resolution = ([432,576])
+    min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
+    # get only datapoints within stim boundaries
+    stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] > min_x) & (df['X_axis'] < max_x) &
+                         (df['Y_axis'] > min_y) & (df['Y_axis'] < max_y)) == True]
+
+    #convert each datapoint to be in 400x400 resolution
+    #y = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis
+    #x = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis
+    #y_update = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis*(400/stim_resolution[0])
+    #x_update = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis*(400/stim_resolution[1])
+    #stimARegionDataDf.loc[stimARegionDataDf['stimId'] == stim_id, 'X_axis'] = x_update
+    #stimARegionDataDf.loc[stimARegionDataDf['stimId'] == stim_id, 'Y_axis'] = y_update
+    #print('after rescale')
+    #print("max X value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis.max())
+    #print("min X value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis.min())
+    #print("max Y value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis.max())
+    #print("min Y value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis.min())
+
+    #stim face or fractal
+    stim_resolution = ([400, 400])
+    min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
+    #get only datapoints within stim boundaries
+    stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] > min_x) & (df['X_axis'] < max_x) & (
+            df['Y_axis'] > min_y) & (df['Y_axis'] < max_y)) == True]
+    byImgRegionDataDf = pd.concat([stimARegionDataDf,stimBRegionDataDf])
+    byImgRegionDataDf.reset_index(drop=True, inplace=True)
+    byImgRegionDataDf.drop(byImgRegionDataDf.columns[[0]], axis=1, inplace=True)
+
+    return byImgRegionDataDf
+
+def data_to_fixation_map(data_df):
+    # Generate some test data
+    x = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].X_axis #np.random.randn(8873)
+    y = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].Y_axis #np.random.randn(8873)
+
+    heatmap, xedges, yedges = np.histogram2d(x, y, bins=(432, 576))
+    #extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+
+    plt.clf()
+    plt.imshow(heatmap, origin='upper')
+    plt.show()
+
+    return
+
+def data_to_scanpath(data_df):
+
+    return

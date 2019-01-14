@@ -1,4 +1,4 @@
-from eye_tracking_data_parser import raw_data_parser as parser
+from eye_tracking_data_parser import raw_data_preprocess as parser
 import torch
 import pandas as pd
 
@@ -34,5 +34,12 @@ scale_ranking_bmm_short_data_df = pd.read_csv(scale_ranking_bmm_short_data_csv_p
 data_df = pd.concat([bdm_bmm_short_data_df,scale_ranking_bmm_short_data_df])
 
 #get tidy data frame
-data_df = parser.data_tidying(data_df)
+data_df = parser.data_tidying(data_df, ([1080, 1920]))
+
+countUniqueSubjectID = data_df.subjectID.unique().shape[0]
+countUniqueImg = data_df.stimName.unique().shape[0]
+countUniqueSampleID = data_df.sampleId.unique().shape[0]
+
+parser.data_to_fixation_map(data_df)
+
 print('done')
