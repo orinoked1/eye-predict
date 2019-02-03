@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import numpy.random
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 
 def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
@@ -74,6 +75,7 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
     #returns path for data csv file
     return data_csv_path
 
+
 def find_stim_boundaries(screen_resolution, stim_resolution):
     min_x = (screen_resolution[1]/2) - (stim_resolution[1]/2)
     max_x = (screen_resolution[1]/2) + (stim_resolution[1]/2)
@@ -93,10 +95,13 @@ def data_tidying(df, screen_resolution):
     # Remove Nan
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
+
     #update subjectID to be unique between expirements (fix should be at the raw_data_to_csv def)
     df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
     # add 'sampleId' field for each uniqe sample
     df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
+
+    # flip y data points lower to higher and vice versa
 
 
     # stim is snack
@@ -104,45 +109,67 @@ def data_tidying(df, screen_resolution):
     stim_resolution = ([432,576])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
-    stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] > min_x) & (df['X_axis'] < max_x) &
-                         (df['Y_axis'] > min_y) & (df['Y_axis'] < max_y)) == True]
+    stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
+                         (df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+    # Shifting x,y datapoint to start from (0,0) point
+    stimARegionDataDf.X_axis = stimARegionDataDf.X_axis - min_x
+    stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
 
-    #convert each datapoint to be in 400x400 resolution
-    #y = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis
-    #x = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis
-    #y_update = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis*(400/stim_resolution[0])
-    #x_update = stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis*(400/stim_resolution[1])
-    #stimARegionDataDf.loc[stimARegionDataDf['stimId'] == stim_id, 'X_axis'] = x_update
-    #stimARegionDataDf.loc[stimARegionDataDf['stimId'] == stim_id, 'Y_axis'] = y_update
-    #print('after rescale')
-    #print("max X value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis.max())
-    #print("min X value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].X_axis.min())
-    #print("max Y value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis.max())
-    #print("min Y value", stimARegionDataDf[stimARegionDataDf['stimId'] == stim_id].Y_axis.min())
 
     #stim face or fractal
     stim_resolution = ([400, 400])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     #get only datapoints within stim boundaries
-    stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] > min_x) & (df['X_axis'] < max_x) & (
-            df['Y_axis'] > min_y) & (df['Y_axis'] < max_y)) == True]
+    stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) & (
+            df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+    # Shifting x,y datapoint to start from (0,0) point
+    stimBRegionDataDf.X_axis = stimBRegionDataDf.X_axis - min_x
+    stimBRegionDataDf.Y_axis = stimBRegionDataDf.Y_axis - min_y
+
     byImgRegionDataDf = pd.concat([stimARegionDataDf,stimBRegionDataDf])
     byImgRegionDataDf.reset_index(drop=True, inplace=True)
     byImgRegionDataDf.drop(byImgRegionDataDf.columns[[0]], axis=1, inplace=True)
 
+
     return byImgRegionDataDf
 
 def data_to_fixation_map(data_df):
+    current_ubject_data = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg']
     # Generate some test data
     x = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].X_axis #np.random.randn(8873)
     y = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].Y_axis #np.random.randn(8873)
+    print(min(x))
+    print(max(x))
+    print(min(y))
+    print(max(y))
 
-    heatmap, xedges, yedges = np.histogram2d(x, y, bins=(432, 576))
-    #extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    xedges = np.arange(576)
+    yedges = np.arange(432)
 
-    plt.clf()
-    plt.imshow(heatmap, origin='upper')
+    H, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
+    H = H.T  # Let each row list bins with common y range.
+
+   # im = mpl.image.NonUniformImage(H, interpolation='bilinear')
+   # plt.imshow(im)
+   # plt.show()
+
+    plt.imshow(H)
     plt.show()
+
+    matrix = np.zeros((432, 576))
+    temp = [x,y]
+    temp = np.asanyarray(temp).astype(int)
+    tt = np.transpose(temp)
+    for t in tt:
+        print(t)
+        matrix[t[1],t[0]] = 1.
+
+    plt.imshow(matrix)
+    plt.show()
+
+    #plt.clf()
+    #plt.imshow(heatmap, origin='upper')
+    #plt.show()
 
     return
 
