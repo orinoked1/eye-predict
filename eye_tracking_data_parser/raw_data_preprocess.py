@@ -4,9 +4,7 @@ import codecs
 import os
 import glob
 import numpy as np
-import numpy.random
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 
 
 def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
@@ -86,12 +84,14 @@ def find_stim_boundaries(screen_resolution, stim_resolution):
 
 
 def data_tidying(df, screen_resolution):
+    print('Log..... Data tidying')
     # Change X, Y and timeStamp data from String to Numeric changing strings " . ", "EBLINK", FIX", "SACC" to nan
     df.X_axis = pd.to_numeric(df.X_axis, errors='coerce')
     df.Y_axis = pd.to_numeric(df.Y_axis, errors='coerce')
     df.timeStamp = pd.to_numeric(df.timeStamp, errors='coerce')
     df.X_axis = df.X_axis.round()
     df.Y_axis = df.Y_axis.round()
+    df.bid = df.bid.round()
     # Remove Nan
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
@@ -100,9 +100,6 @@ def data_tidying(df, screen_resolution):
     df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
     # add 'sampleId' field for each uniqe sample
     df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
-
-    # flip y data points lower to higher and vice versa
-
 
     # stim is snack
     stim_id = 1
@@ -133,30 +130,23 @@ def data_tidying(df, screen_resolution):
 
     return byImgRegionDataDf
 
-def data_to_fixation_map(data_df):
-    current_ubject_data = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg']
-    # Generate some test data
-    x = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].X_axis #np.random.randn(8873)
-    y = data_df[data_df['sampleId'] == 'bmem_short_143_306_gafni_moshe.jpg'].Y_axis #np.random.randn(8873)
-    print(min(x))
-    print(max(x))
-    print(min(y))
-    print(max(y))
+def data_to_fixation_map_by_sampleId(data_df, sampleId):
+    print('Log..... get fixation map for sampleId: ',sampleId)
+
+    x = data_df[data_df['sampleId'] == sampleId].X_axis
+    y = data_df[data_df['sampleId'] == sampleId].Y_axis
 
     xedges = np.arange(576)
     yedges = np.arange(432)
 
-    H, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
-    H = H.T  # Let each row list bins with common y range.
+    heatmap, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
+    heatmap = heatmap.T  # Let each row list bins with common y range.
 
-   # im = mpl.image.NonUniformImage(H, interpolation='bilinear')
-   # plt.imshow(im)
-   # plt.show()
-
-    plt.imshow(H)
+    """
+    plt.imshow(heatmap)
     plt.show()
 
-    matrix = np.zeros((432, 576))
+    matrix = np.zeros((433, 577))
     temp = [x,y]
     temp = np.asanyarray(temp).astype(int)
     tt = np.transpose(temp)
@@ -166,12 +156,23 @@ def data_to_fixation_map(data_df):
 
     plt.imshow(matrix)
     plt.show()
+    """
+    return heatmap
 
-    #plt.clf()
-    #plt.imshow(heatmap, origin='upper')
-    #plt.show()
+def get_fixation_dataset(data_df):
+    print('Log..... Build fixation dataset')
+    fixation_dataset = []
+    for sampleId in data_df.sampleId.unique():
+        sample_data = []
+        bid = data_df[data_df['sampleId'] == sampleId].bid.unique()
+        stimName = data_df[data_df['sampleId'] == sampleId].stimName.unique()
+        fixationMap = data_to_fixation_map_by_sampleId(data_df, sampleId)
+        sample_data.append(stimName[0])
+        sample_data.append(fixationMap)
+        sample_data.append(bid[0])
+        fixation_dataset.append(sample_data)
 
-    return
+    return fixation_dataset
 
 def data_to_scanpath(data_df):
 
