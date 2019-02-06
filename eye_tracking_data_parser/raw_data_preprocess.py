@@ -132,10 +132,11 @@ def data_tidying(df, screen_resolution):
 
 def data_to_fixation_map_by_sampleId(data_df, sampleId):
     print('Log..... get fixation map for sampleId: ',sampleId)
-
     x = data_df[data_df['sampleId'] == sampleId].X_axis
     y = data_df[data_df['sampleId'] == sampleId].Y_axis
-
+    if len(x) | len(y) < 5:
+        print('Fixation data is None for sampleId: ', sampleId)
+        return None
     xedges = np.arange(576)
     yedges = np.arange(432)
 
@@ -166,8 +167,14 @@ def get_fixation_dataset(data_df):
         sample_data = []
         bid = data_df[data_df['sampleId'] == sampleId].bid.unique()
         stimName = data_df[data_df['sampleId'] == sampleId].stimName.unique()
+        stimType = data_df[data_df['sampleId'] == sampleId].stimType.unique()
+        sample = data_df[data_df['sampleId'] == sampleId].sampleId.unique()
         fixationMap = data_to_fixation_map_by_sampleId(data_df, sampleId)
+        if type(fixationMap) is not np.ndarray:
+            continue
         sample_data.append(stimName[0])
+        sample_data.append(stimType[0])
+        sample_data.append(sample[0])
         sample_data.append(fixationMap)
         sample_data.append(bid[0])
         fixation_dataset.append(sample_data)

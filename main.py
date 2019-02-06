@@ -49,29 +49,31 @@ except:
 data_df = pd.concat([bdm_bmm_short_data_df,scale_ranking_bmm_short_data_df])
 
 
-"""
-sampleList = []
-sampleFixationMaps = []
-for sampleId in sampleList:
-    map = parser.data_to_fixation_map_by_sampleId(data_df, sampleId)
-    sampleFixationMaps.append(map)
-    """
 
+def build_fixation_dataset(data_df):
+    # get tidy data frame
+    data_df = parser.data_tidying(data_df, ([1080, 1920]))
+    fixation_dataset = parser.get_fixation_dataset(data_df)
 
+    with open('fixation_dataset_v1.pkl', 'wb') as f:
+        pickle.dump(fixation_dataset, f)
 
-# get tidy data frame
-data_df = parser.data_tidying(data_df, ([1080, 1920]))
-fixation_dataset = parser.get_fixation_dataset(data_df)
-
-with open('fixation_dataset.pkl', 'wb') as f:
-    pickle.dump(fixation_dataset, f)
-"""
 try:
-   with open('fixation_dataset.pkl', 'rb') as f:
-       mynewlist = pickle.load(f)
+   with open('fixation_dataset_v1.pkl', 'rb') as f:
+       fixation_dataset = pickle.load(f)
 except:
    print('ERROR: fixation dataset does not exist! -> start running def to create it')
    build_fixation_dataset(data_df)
-   """
 
-print('done')
+
+print(fixation_dataset[161][2])
+plt.imshow(fixation_dataset[161][3])
+plt.show()
+
+"""
+for i in fixation_dataset:
+    print('Sample stim name: ', i[0])
+    print('Sample lable: ', i[2])
+    plt.imshow(i[1])
+    plt.show()
+    """
