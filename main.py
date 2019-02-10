@@ -1,4 +1,5 @@
 from eye_tracking_data_parser import raw_data_preprocess as parser
+import get_data_functions as get
 import torch
 import pandas as pd
 import pickle
@@ -8,7 +9,7 @@ import numpy as np
 use_cuda = torch.cuda.is_available()
 
 def get_raw_data():
-    """
+
     #read 'scale_ranking_bmm_short_data' row data into csv
     #TODO: read info from config file
     asc_files_path = '../raw_data/scale_ranking_bmm_short_data/output/asc'
@@ -31,7 +32,9 @@ def get_raw_data():
     # read csv into DF
     bdm_bmm_short_data_df = pd.read_csv(bdm_bmm_short_data_csv_path)
     scale_ranking_bmm_short_data_df = pd.read_csv(scale_ranking_bmm_short_data_csv_path)
-    """
+
+    return  bdm_bmm_short_data_df, scale_ranking_bmm_short_data_df
+
 
 
 bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
@@ -43,37 +46,34 @@ try:
     scale_ranking_bmm_short_data_df = pd.read_csv(scale_ranking_bmm_short_data_csv_path)
 except:
     print('ERROR: csv files does not exist! -> start running def to create it')
-    bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path  = get_raw_data()
+    bdm_bmm_short_data_df, scale_ranking_bmm_short_data_df  = get_raw_data()
 
 #merge the to datasets to one
 data_df = pd.concat([bdm_bmm_short_data_df,scale_ranking_bmm_short_data_df])
 
-
-
-def build_fixation_dataset(data_df):
-    # get tidy data frame
-    data_df = parser.data_tidying(data_df, ([1080, 1920]))
-    fixation_dataset = parser.get_fixation_dataset(data_df)
-
-    with open('fixation_dataset_v1.pkl', 'wb') as f:
-        pickle.dump(fixation_dataset, f)
 
 try:
    with open('fixation_dataset_v1.pkl', 'rb') as f:
        fixation_dataset = pickle.load(f)
 except:
    print('ERROR: fixation dataset does not exist! -> start running def to create it')
-   build_fixation_dataset(data_df)
+   fixation_dataset = get.get_fixation_dataset(data_df, ([1080, 1920]))
+   with open('fixation_dataset_v1.pkl', 'wb') as f:
+       pickle.dump(fixation_dataset, f)
 
 
-print(fixation_dataset[161][2])
-plt.imshow(fixation_dataset[161][3])
-plt.show()
+try:
+    with open('scanpath_dataset.pkl', 'rb') as f:
+        scanpath_dataset = pickle.load(f)
+except:
+    print('ERROR: Scanpath dataset does not exist! -> start running def to create it')
+    scanpath_dataset = get.get_scanpath_dataset(data_df, ([1080, 1920]))
+    with open('scanpath_dataset.pkl', 'wb') as f:
+        pickle.dump(scanpath_dataset, f)
 
 """
-for i in fixation_dataset:
-    print('Sample stim name: ', i[0])
-    print('Sample lable: ', i[2])
-    plt.imshow(i[1])
-    plt.show()
-    """
+print(fixation_dataset[162][2])
+plt.imshow(fixation_dataset[162][3])
+plt.show()
+"""
+
