@@ -9,8 +9,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import get_data_functions as get
-import pandas as pd
+import ds_readers as get
 
 
 def map(FIXATION_MAP, path, stimulus_name):
@@ -24,9 +23,9 @@ def map(FIXATION_MAP, path, stimulus_name):
 
     fixation_map = FIXATION_MAP
     fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB)*255
-    heatmap_img = cv2.applyColorMap(fixation_map, cv2.COLORMAP_HOT)
-    toPlot = cv2.resize(toPlot, (heatmap_img.shape[1], heatmap_img.shape[0]))
-    fin = cv2.addWeighted(heatmap_img, 0.7, toPlot, 0.7, 0)
+    #heatmap_img = cv2.applyColorMap(fixation_map, cv2.COLORMAP_HOT)
+    toPlot = cv2.resize(toPlot, (fixation_map.shape[1], fixation_map.shape[0]))
+    fin = cv2.addWeighted(fixation_map, 0.7, toPlot, 0.7, 0)
 
     plt.imshow(fin)
     plt.show()
@@ -80,13 +79,23 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
 
     return
 
-def visualize(fixation_dataset, scanpath_dataset, stimType):
-    fixation_df = pd.DataFrame(fixation_dataset)
-    fixation_df.columns = ['stimName', 'stimType', 'sampleId', 'fixationMap', 'bid']
+def visualize(fixation_df, scanpath_df, stimType):
 
-    scanpath_df = pd.DataFrame(scanpath_dataset)
-    scanpath_df.columns = ['stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
+    if stimType == 'Snacks':
+        path = '/bdm_bmm_short_data/stim/'
+    else:
+        path = '/scale_ranking_bmm_short_data/stim/'
 
+    fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stimType]
+    scanpath_specific_stim_df = scanpath_df[scanpath_df['stimType'] == stimType]
 
+    fixation_sample = fixation_specific_stim_df.sample(n=1)
+    sample_index = fixation_sample.index[0]
+    scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
+
+    print('Log..... plot fixation map')
+    map(fixation_sample.fixationMap.values[0], path, fixation_sample.stimName.values[0])
+    print('Log... plot scanpath')
+    scanpath(scanpath_sample.scanpath, path, scanpath_sample.stimName, False)
 
     return
