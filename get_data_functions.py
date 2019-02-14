@@ -13,9 +13,10 @@ def stimulus(DATASET_NAME, STIMULUS_NAME):
         to be specified. The latter, must include file extension.
         The returned matrix could be 2- or 3-dimesional. '''
 
-    return cv2.imread(COLLECTION_PATH+'/'
-                      +DATASET_NAME
-                      +STIMULUS_NAME, 1)
+    path = COLLECTION_PATH + DATASET_NAME + STIMULUS_NAME
+    image = cv2.imread(path, 1)
+
+    return image
 
 
 def data_to_fixation_map_by_sampleId(data_df, sampleId):

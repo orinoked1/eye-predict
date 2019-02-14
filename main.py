@@ -71,9 +71,5 @@ except:
     with open('scanpath_dataset.pkl', 'wb') as f:
         pickle.dump(scanpath_dataset, f)
 
-"""
-print(fixation_dataset[162][2])
-plt.imshow(fixation_dataset[162][3])
-plt.show()
-"""
+print('x')
 
