@@ -49,7 +49,7 @@ def get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_cs
 
     return data_df
 
-def get_datasets():
+def get_datasets_df():
     bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
     scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
 
