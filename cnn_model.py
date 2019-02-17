@@ -132,3 +132,7 @@ plt.plot(epochs, test_loss_curve, 'r', label='Q1 Test Data')
 
 plt.legend(loc='best')
 plt.savefig('cnn_train_test_plot.png')
+
+# decide number of epochs
+# add batch run - use small batch size to overcome the memory issue
+# check val test when ..
