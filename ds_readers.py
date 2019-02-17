@@ -49,7 +49,7 @@ def get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_cs
 
     return data_df
 
-def get_datasets_df():
+def get_fixation_map_label():
     bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
     scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
 
@@ -67,6 +67,27 @@ def get_datasets_df():
 
     fixation_df = pd.DataFrame(fixation_dataset)
     fixation_df.columns = ['stimName', 'stimType', 'sampleId', 'fixationMap', 'bid']
+    # hack for removing 999 bids (should have be done on the data tidying)
+    fixation_df = fixation_df[fixation_df.bid != 999]
+    maps = []
+
+    for map in fixation_df.fixationMap:
+        #normelize the map
+        maxval = np.amax(map)
+        map = map / maxval
+        map = map.astype(np.float32)
+        maps.append(map)
+
+    lables = np.asanyarray(fixation_df.bid)
+    lables = lables.astype(np.float32)
+
+    return np.asanyarray(maps), lables
+
+def get_scanpath_df():
+    bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
+    scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
+
+    data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
 
     try:
         with open('scanpath_dataset.pkl', 'rb') as f:
@@ -82,10 +103,9 @@ def get_datasets_df():
     scanpath_df.columns = ['stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
 
     #hack for removing 999 bids (should have be done on the data tidying)
-    fixation_df = fixation_df[fixation_df.bid != 999]
     scanpath_df = scanpath_df[scanpath_df.bid != 999]
 
-    return fixation_df, scanpath_df
+    return scanpath_df
 
 def stimulus(DATASET_NAME, STIMULUS_NAME):
 
@@ -178,9 +198,10 @@ def get_scanpath_dataset(data_df, screen_resolution, downsamplemillisec = 4):
 
     return scanpath_dataset
 
-def get_train_test_dataset(data_df):
-    y = data_df['bid']
-    x = data_df['fixationMap']
+def get_train_test_dataset():
+    x, y = get_fixation_map_label()
+    #y = data_df['bid']
+    #x = data_df['fixationMap']
     x, y = shuffle(x, y)
     # Allocating 80% of the data for train and 20% to test
     train_ratio = 0.8

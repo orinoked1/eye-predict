@@ -29,6 +29,7 @@ def map(FIXATION_MAP, path, stimulus_name):
 
     plt.imshow(fin)
     plt.show()
+    plt.pause(0.0001)
 
     return
 
@@ -75,6 +76,7 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
         if (i % 10) == 0:
             plt.imshow(toPlot[i])
             plt.show()
+            plt.pause(0.0001)
 
 
     return

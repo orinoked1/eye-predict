@@ -12,12 +12,59 @@ class Variable(autograd.Variable):
             data = data.cuda()
         super(Variable, self).__init__(data, *args, **kwargs)
 
-class FaceDetect12net(torch.nn.Module):
-    def __init__(self):
-        # Our batch shape for input x is (3, 12, 12)
-        super(FaceDetect12net, self).__init__()
 
-        # Input channels = 3, output channels = 16
+class cnnAlexNet(torch.nn.Module):
+    '''
+    code from torchvision/models/alexnet.py
+    结构参考 <https://arxiv.org/abs/1404.5997>
+    '''
+
+    def __init__(self, num_classes=11):
+        super(cnnAlexNet, self).__init__()
+
+        self.model_name = 'cnnalexnet'
+
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            #nn.Conv2d(192, 64, kernel_size=3, padding=1),
+            #nn.ReLU(inplace=True),
+            #nn.Conv2d(64, 16, kernel_size=3, padding=1),
+            #nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(256 * 12 * 17, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), 256 * 12 * 17)
+        x = self.classifier(x)
+        return x
+
+class cnn(torch.nn.Module):
+    def __init__(self):
+        # Our batch shape for input x is (1, 431, 575)
+        super(cnn, self).__init__()
+
+        # Input channels = 1, output channels = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1)
         self.pool = nn.MaxPool2d(kernel_size=3, stride=2)
 
@@ -127,10 +174,10 @@ class FaceDetect24net(torch.nn.Module):
         return(x)
 
 
-def checkpoint_12net_path():
-    model_path = "../12-net-model.checkpoint"
+def checkpoint_cnn_path():
+    model_path = "../cnn-model.checkpoint"
     if (use_cuda):
-        model_path = "../12-net-model-cuda.cheakpoint"
+        model_path = "../cnn-model-cuda.cheakpoint"
 
     return model_path
 
