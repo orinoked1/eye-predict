@@ -49,18 +49,17 @@ def get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_cs
 
     return data_df
 
-def get_fixation_map_label():
-    bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
-    scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
-
-    data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
-
+def get_fixation_maps_and_labels():
     try:
         with open('fixation_dataset_v1.pkl', 'rb') as f:
             print('Getting fixation dataset')
             fixation_dataset = pickle.load(f)
     except:
         print('ERROR: fixation dataset does not exist! -> start running def to create it')
+        bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
+        scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
+
+        data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
         fixation_dataset = get_fixation_dataset(data_df, ([1080, 1920]))
         with open('fixation_dataset_v1.pkl', 'wb') as f:
             pickle.dump(fixation_dataset, f)
@@ -199,9 +198,7 @@ def get_scanpath_dataset(data_df, screen_resolution, downsamplemillisec = 4):
     return scanpath_dataset
 
 def get_train_test_dataset():
-    x, y = get_fixation_map_label()
-    #y = data_df['bid']
-    #x = data_df['fixationMap']
+    x, y = get_fixation_maps_and_labels()
     x, y = shuffle(x, y)
     # Allocating 80% of the data for train and 20% to test
     train_ratio = 0.8
@@ -210,4 +207,14 @@ def get_train_test_dataset():
     y_train, y_test = y[:train_size], y[train_size:]
 
     return np.asanyarray(X_train), np.asanyarray(X_test), y_train, y_test
+
+def get_train_val_dataset(x_train, y_train):
+    # Allocating 90% of the data for train and 10% to validation
+    train_ratio = 0.9
+    train_size = round(train_ratio * len(x_train))
+    X_train, X_val = x_train[:train_size], x_train[train_size:]
+    y_train, y_val = y_train[:train_size], y_train[train_size:]
+
+    return X_train, X_val, y_train, y_val
+
 
