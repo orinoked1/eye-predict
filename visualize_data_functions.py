@@ -23,7 +23,7 @@ def map(FIXATION_MAP, path, stimulus_name):
     fixation_map = FIXATION_MAP
     fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
     toPlot = cv2.resize(toPlot, (fixation_map.shape[1], fixation_map.shape[0]))
-    fin = cv2.addWeighted(fixation_map, 1, toPlot, 0, 0)
+    fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
 
     plt.imshow(fin)
     plt.show()
