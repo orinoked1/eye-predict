@@ -61,7 +61,7 @@ def get_fixation_maps_and_labels():
 
         data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
         fixation_dataset = get_fixation_dataset(data_df, ([1080, 1920]))
-        with open('fixation_dataset_v1.pkl', 'wb') as f:
+        with open('fixation_dataset_v2.pkl', 'wb') as f:
             pickle.dump(fixation_dataset, f)
 
     fixation_df = pd.DataFrame(fixation_dataset)
@@ -83,19 +83,18 @@ def get_fixation_maps_and_labels():
     return np.asanyarray(maps), lables
 
 def get_scanpath_df():
-    bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
-    scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
-
-    data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
-
     try:
         with open('scanpath_dataset.pkl', 'rb') as f:
             print('Getting scanpath dataset')
             scanpath_dataset = pickle.load(f)
     except:
         print('ERROR: Scanpath dataset does not exist! -> start running def to create it')
+        bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
+        scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
+
+        data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
         scanpath_dataset = get_scanpath_dataset(data_df, ([1080, 1920]))
-        with open('scanpath_dataset.pkl', 'wb') as f:
+        with open('scanpath_dataset_v0.pkl', 'wb') as f:
             pickle.dump(scanpath_dataset, f)
 
     scanpath_df = pd.DataFrame(scanpath_dataset)
@@ -106,6 +105,29 @@ def get_scanpath_df():
 
     return scanpath_df
 
+def get_fixation_df():
+    try:
+        with open('fixation_dataset_v1.pkl', 'rb') as f:
+            print('Getting fixation dataset')
+            fixation_dataset = pickle.load(f)
+    except:
+        print('ERROR: Fixation dataset does not exist! -> start running def to create it')
+        bdm_bmm_short_data_csv_path = 'eye_tracking_data_parser/bdm_bmm_short_data_df.csv'
+        scale_ranking_bmm_short_data_csv_path = 'eye_tracking_data_parser/scale_ranking_bmm_short_data_df.csv'
+
+        data_df = get_all_data_df(bdm_bmm_short_data_csv_path, scale_ranking_bmm_short_data_csv_path)
+        fixation_dataset = get_fixation_dataset(data_df, ([1080, 1920]))
+        with open('fixation_dataset_v2.pkl', 'wb') as f:
+            pickle.dump(fixation_dataset, f)
+
+    fixation_df = pd.DataFrame(fixation_dataset)
+    fixation_df.columns = ['stimName', 'stimType', 'sampleId', 'fixationMap', 'bid']
+
+    #hack for removing 999 bids (should have be done on the data tidying)
+    fixation_df = fixation_df[fixation_df.bid != 999]
+
+    return fixation_df
+
 def stimulus(DATASET_NAME, STIMULUS_NAME):
 
     """ This functions returns the matrix of pixels of a specified stimulus.
@@ -113,6 +135,7 @@ def stimulus(DATASET_NAME, STIMULUS_NAME):
 
     path = COLLECTION_PATH + DATASET_NAME + STIMULUS_NAME
     image = cv2.imread(path, 1)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     return image
 

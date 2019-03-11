@@ -2,36 +2,23 @@
 import torch
 import sys
 sys.path.append('../')
-import models
 from models import Variable
-import matplotlib as mpl
 from sklearn.utils import shuffle
-import ds_readers as ds
 
-use_cuda = torch.cuda.is_available()
-log = open("cnn_loss.txt", "w+")
+def init(epochs, log_file_name):
+    use_cuda = torch.cuda.is_available()
+    log = open(log_file_name, "w+")
+    x_dtype = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
+    y_dtype = torch.cuda.LongTensor if use_cuda else torch.LongTensor
+    n_epochs = epochs
+    criterion = torch.nn.CrossEntropyLoss()
 
-if use_cuda:
-    mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    plt.ioff()  # http://matplotlib.org/faq/usage_faq.html (interactive mode)
-else:
-    import matplotlib.pyplot as plt
+    return  use_cuda, log, x_dtype, y_dtype, n_epochs, criterion
 
-x_dtype = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
-y_dtype = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 
-n_epochs = 10
-
-""" 
-Define a criterion for the neural network - 
-use mean squared error.
-"""
-criterion = torch.nn.CrossEntropyLoss()
-
-def train_cnn(net, X_train, Y_train, X_val, Y_val, criterion):
+def train(model, X_train, Y_train, X_val, Y_val, criterion, use_cuda, log, x_dtype, y_dtype, n_epochs):
     if (use_cuda):
-        net.cuda()
+        model.cuda()
 
     print("use_cuda:",use_cuda)
     print("epochs:",n_epochs)
@@ -40,7 +27,7 @@ def train_cnn(net, X_train, Y_train, X_val, Y_val, criterion):
     Train the network using Adam optimizer. 
     Train the network and test it for each line in the dataset 
     """
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-7)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-7)
 
     n_train = len(X_train)
     X_train = torch.from_numpy(X_train).type(x_dtype)
@@ -60,7 +47,7 @@ def train_cnn(net, X_train, Y_train, X_val, Y_val, criterion):
         epoch_loss_mean = []
         #Train the model
         idx = shuffle(range(n_train))
-        print("cnn train size:",n_train)
+        print("Train size:", n_train)
         for i in idx :
             data_point = i
 
@@ -68,7 +55,7 @@ def train_cnn(net, X_train, Y_train, X_val, Y_val, criterion):
             y_var = Variable(Y_train[data_point])
 
             optimizer.zero_grad()
-            y_pred = net(x_var)
+            y_pred = model(x_var)
 
             y_var.unsqueeze_(dim=0)
             train_loss = criterion(y_pred, y_var)
@@ -100,7 +87,7 @@ def train_cnn(net, X_train, Y_train, X_val, Y_val, criterion):
 
     return train_loss_curve, val_loss_curve
 
-def test_cnn(X_test, Y_test, criterion):
+def test(model, X_test, Y_test, criterion, log, x_dtype, y_dtype):
     # compute test loss
     model.eval()
     epoch_loss_mean = []
@@ -119,39 +106,4 @@ def test_cnn(X_test, Y_test, criterion):
     log.write("Final Test Loss: {0},\n ".format(test_total_loss.item()))
     print("Final Test Loss: {0}, ".format(test_total_loss.item()))
 
-    return train_loss_curve, val_loss_curve
-
-
-
-model = models.cnnSimple()
-
-#fixation_df = ds.get_fixationMap_df()
-print("preparing training and test sets")
-x_train, x_test, y_train, y_test = ds.get_train_test_dataset()
-
-X_train, X_val, Y_train, Y_val = ds.get_train_val_dataset(x_train, y_train)
-
-print("Start train")
-train_loss_curve, val_loss_curve = train_cnn(model, X_train, Y_train, X_val, Y_val, criterion)
-
-print("Run test")
-test_cnn(x_test, y_test, criterion)
-
-log.close()
-
-#torch.save(model.state_dict(), models.checkpoint_cnn_path())
-
-plt.title('Loss function value for validation and train after each epoch')
-plt.xlabel('epoch')
-plt.ylabel('loss')
-
-epochs = list(range(1, n_epochs + 1))
-plt.plot(epochs, train_loss_curve, 'b', label='Q1 Train Data')
-plt.plot(epochs, val_loss_curve, 'r', label='Q1 Validation Data')
-
-plt.legend(loc='best')
-plt.savefig('cnn_train_val_plot.png')
-
-# decide number of epochs
-# add batch run - use small batch size to overcome the memory issue
-# check val test when ..
+    return test_total_loss

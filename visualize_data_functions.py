@@ -20,12 +20,10 @@ def map(FIXATION_MAP, path, stimulus_name):
     stimulus = get.stimulus(path, stimulus_name)
 
     toPlot = stimulus
-
     fixation_map = FIXATION_MAP
-    fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB)*255
-    #heatmap_img = cv2.applyColorMap(fixation_map, cv2.COLORMAP_HOT)
+    fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
     toPlot = cv2.resize(toPlot, (fixation_map.shape[1], fixation_map.shape[0]))
-    fin = cv2.addWeighted(fixation_map, 0.7, toPlot, 0.7, 0)
+    fin = cv2.addWeighted(fixation_map, 1, toPlot, 0, 0)
 
     plt.imshow(fin)
     plt.show()
