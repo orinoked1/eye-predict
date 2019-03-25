@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import ds_readers as get
+import scipy.misc
 
 
 def map(FIXATION_MAP, path, stimulus_name):
@@ -25,9 +26,7 @@ def map(FIXATION_MAP, path, stimulus_name):
     toPlot = cv2.resize(toPlot, (fixation_map.shape[1], fixation_map.shape[0]))
     fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
 
-    plt.imshow(fin)
-    plt.show()
-    plt.pause(0.0001)
+    scipy.misc.imsave('imageEX/'+'fixationMapEX.jpg', fin)
 
     return
 
@@ -72,10 +71,8 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
 
     for i in range(len(toPlot)):
         if (i % 10) == 0:
-            plt.imshow(toPlot[i])
-            plt.show()
-            plt.pause(0.0001)
-
+            figName = str(i) + '_scanPathEX.jpg'
+            scipy.misc.imsave('imageEX/'+figName, toPlot[i])
 
     return
 
@@ -93,9 +90,9 @@ def visualize(fixation_df, scanpath_df, stimType):
     sample_index = fixation_sample.index[0]
     scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
 
-    print('Log..... plot fixation map')
+    print('Log..... save fixation map')
     map(fixation_sample.fixationMap.values[0], path, fixation_sample.stimName.values[0])
-    print('Log... plot scanpath')
+    print('Log... save scanpath')
     scanpath(scanpath_sample.scanpath, path, scanpath_sample.stimName, False)
 
     return

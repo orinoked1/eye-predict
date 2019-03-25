@@ -7,18 +7,19 @@ import ds_readers as ds
 import matplotlib as mpl
 
 """
-Visualization
+Visualization lalala
 """
-"""
+
 fixation_df = ds.get_fixation_df()
 scanpath_df = ds.get_scanpath_df()
 stimTypes = fixation_df.stimType.unique()
-vis.visualize(fixation_df, scanpath_df, stimTypes[0])
+vis.visualize(fixation_df, scanpath_df, stimTypes[2])
+
 """
 num_epochs = 10
 batch_size = 64
 
-"""Run model CNN simple"""
+""""""Run model CNN simple""""""
 model = models.cnnSimple()
 
 use_cuda, log, x_dtype, y_dtype, n_epochs, criterion = run_model.init(num_epochs, "cnn_loss.txt")
@@ -41,3 +42,4 @@ log.close()
 plot = run_model.plot_train_val_loss_curve(use_cuda, n_epochs, train_loss_curve, val_loss_curve)
 
 plot.show()
+"""
