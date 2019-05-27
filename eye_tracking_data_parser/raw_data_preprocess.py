@@ -19,7 +19,7 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
     for ascFile in glob.glob(asc_directory + '//*asc'):
         ascFileName = os.path.basename(ascFile)
         tempList = ascFileName.split('_')
-        subjectIntId = tempList[2]
+        subjectIntId = tempList[0]
         print('Log.....Getting Ascii file data - ' + ascFileName)
         ascFile = codecs.open(asc_directory + '//' + ascFileName, encoding='utf-8-sig')
         ascData = ascFile.readlines()
@@ -28,10 +28,10 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
         ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
         # below a very slow option for spliting the data:
         # ascDf = ascDf['data'].apply(lambda x: pd.Series(x.split('\t')))
-        ascDf = ascDf[[0, 1, 2]]
+        ascDf = ascDf[[0, 1, 2, 4, 5]]
         print('Log.....Getting txt file data for subject id - ' + subjectIntId)
         # Read txt file of subject same subject as asc file
-        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId + '*txt')[0])
+        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId +'_Scale'+ '*txt')[0])
         txtData = pd.read_table(txt_directory + '//' + txtFileName)
         # Get number of trials and subject ID
         trialCount = txtData.count()[0]
@@ -47,8 +47,8 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
             # Get the data, starting from 'TrialStart' to subjects 'Response'
             trialData = ascDf.loc[indexStart:indexEnd]
             # trialData['subjectID'] = subjectIntId
-            trialData['runtrial'] = trial + 1
-            mergeData = pd.merge(txtData, trialData, on='runtrial')
+            trialData['trial'] = trial + 1
+            mergeData = pd.merge(txtData, trialData, on='trial')
             if (trial + 1 == 1):
                 allTrialsData = pd.DataFrame(columns=mergeData.columns)
             allTrialsData = pd.concat([allTrialsData, mergeData])
@@ -62,12 +62,12 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
 
     # Rename columns if needed
     allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
-                               'timeStamp', 'X_axis', 'Y_axis']
+                               'timeStamp', 'L_X_axis', 'L_Y_axis', 'R_X_axis', 'R_Y_axis']
 
     # Store all subjects data DF as CSV
     allSubjectsData.to_csv(csv_file_name) #'scale_ranking_bmm_short_data_df.csv'
-
-    data_csv_path = 'eye_tracking_data_parser/' + csv_file_name
+    current_path = os.getcwd() # update if needed
+    data_csv_path = current_path + csv_file_name
     #returns path for data csv file
     return data_csv_path
 

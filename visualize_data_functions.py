@@ -30,7 +30,6 @@ def map(FIXATION_MAP, path, stimulus_name):
 
     return
 
-
 def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, animation = True):
 
     """ This functions uses cv2 standard library to visualize the scanpath
