@@ -14,7 +14,6 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
     indexStartStr = trial_satart_str #'TrialStart'
     # Set string represents trail ends data records
     indexEndStr = trial_end_str #'ScaleStart'
-
     # Run over each Ascii file and open it
     for ascFile in glob.glob(asc_directory + '//*asc'):
         ascFileName = os.path.basename(ascFile)
@@ -26,8 +25,6 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
         # Split data to columns and get only relevnt ones
         ascDf = pd.DataFrame(ascData, columns=['data'])
         ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
-        # below a very slow option for spliting the data:
-        # ascDf = ascDf['data'].apply(lambda x: pd.Series(x.split('\t')))
         ascDf = ascDf[[0, 1, 2, 4, 5]]
         print('Log.....Getting txt file data for subject id - ' + subjectIntId)
         # Read txt file of subject same subject as asc file
@@ -54,15 +51,27 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
             allTrialsData = pd.concat([allTrialsData, mergeData])
             print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
 
+        # get only dominant eye data
+        txtFilePersonalDataName = os.path.basename(
+            glob.glob(txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
+        txtpersonalData = pd.read_table(txt_directory + '//' + txtFilePersonalDataName)
+        dominant_eye = txtpersonalData['dominant eye (1-right, 2-left)'].values[0]
+        if dominant_eye == 1:
+            allTrialsData = allTrialsData.drop([1, 2], axis=1)
+            allTrialsData.rename(columns={4: 1, 5: 2}, inplace=True)
+        else:
+            allTrialsData = allTrialsData.drop([4, 5], axis=1)
+
         # Appending all data to one DataFrame
         if flag == 0:
             allSubjectsData = pd.DataFrame(columns=allTrialsData.columns)
             flag = 1
         allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
 
+
     # Rename columns if needed
     allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
-                               'timeStamp', 'L_X_axis', 'L_Y_axis', 'R_X_axis', 'R_Y_axis']
+                               'timeStamp', 'X_axis', 'Y_axis']
 
     # Store all subjects data DF as CSV
     allSubjectsData.to_csv(csv_file_name) #'scale_ranking_bmm_short_data_df.csv'
