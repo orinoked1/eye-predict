@@ -101,16 +101,20 @@ def data_tidying(df, screen_resolution):
     df.bid = df.bid.round()
     # Remove Nan
     df.dropna(inplace=True)
+    df.X_axis = df.X_axis.astype(int)
+    df.Y_axis = df.Y_axis.astype(int)
+    df = df[df.bid != 999]
     df.reset_index(drop=True, inplace=True)
 
+
     #update subjectID to be unique between expirements (fix should be at the raw_data_to_csv def)
-    df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
+    #df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
     # add 'sampleId' field for each uniqe sample
     df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
 
     # stim is snack
-    stim_id = 1
-    stim_resolution = ([432,576])
+    stim_id = 2
+    stim_resolution = ([520,690])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
     stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
@@ -120,8 +124,8 @@ def data_tidying(df, screen_resolution):
     stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
 
 
-    #stim face or fractal
-    stim_resolution = ([400, 400])
+    #stim face
+    stim_resolution = ([600, 480])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     #get only datapoints within stim boundaries
     stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) & (

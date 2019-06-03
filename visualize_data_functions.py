@@ -11,9 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ds_readers as get
 import scipy.misc
+import pandas as pd
+import os
+from eye_tracking_data_parser import raw_data_preprocess as parser
 
 
-def map(FIXATION_MAP, path, stimulus_name):
+def map(FIXATION_MAP, imgToPlot_size, path, stimulus_name):
     """
     This functions visualize a specified stimulus adding the fixation map on top.
     """
@@ -23,14 +26,14 @@ def map(FIXATION_MAP, path, stimulus_name):
     toPlot = stimulus
     fixation_map = FIXATION_MAP
     fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
-    toPlot = cv2.resize(toPlot, (fixation_map.shape[1], fixation_map.shape[0]))
+    toPlot = cv2.resize(toPlot, imgToPlot_size)
     fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
 
     scipy.misc.imsave('imageEX/'+'fixationMapEX.jpg', fin)
 
     return
 
-def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, animation = True):
+def scanpath(SCANPATH, imgToPlot_size, path, stimulus_name, putNumbers = True, putLines = True, animation = True):
 
     """ This functions uses cv2 standard library to visualize the scanpath
         of a specified stimulus.
@@ -42,7 +45,8 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
 
     scanpath = SCANPATH
 
-    toPlot = [cv2.resize(stimulus, (575, 431)),] # look, it is a list!
+    #toPlot = [cv2.resize(stimulus, (520, 690)),] # look, it is a list!
+    toPlot = [cv2.resize(stimulus, imgToPlot_size)]  # look, it is a list!
 
     for i in range(np.shape(scanpath)[0]):
 
@@ -69,7 +73,7 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
 
 
     for i in range(len(toPlot)):
-        if (i % 10) == 0:
+        if (i % 50) == 0:
             figName = str(i) + '_scanPathEX.jpg'
             scipy.misc.imsave('imageEX/'+figName, toPlot[i])
 
@@ -77,21 +81,28 @@ def scanpath(SCANPATH, path, stimulus_name, putNumbers = True, putLines = True, 
 
 def visualize(fixation_df, scanpath_df, stimType):
 
-    if stimType == 'Snacks':
-        path = '/bdm_bmm_short_data/stim/'
-    else:
-        path = '/scale_ranking_bmm_short_data/stim/'
+    path = '/Stim_0/'
 
     fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stimType]
     scanpath_specific_stim_df = scanpath_df[scanpath_df['stimType'] == stimType]
 
     fixation_sample = fixation_specific_stim_df.sample(n=1)
+
+    sample = fixation_sample['sampleId'].values[0]
+    print(sample)
+    y = os.getcwd()
+    raw_data_df = pd.read_csv(y + '/raw_data_01.csv')
+    parser.data_tidying(raw_data_df, [1080, 1920])
+    temp_df = raw_data_df[raw_data_df['subjectID']==int(sample[0:3])]
+    temp_df = temp_df[temp_df['stimName']==str(sample[4:])]
+
     sample_index = fixation_sample.index[0]
     scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
+    imgToPlot_size = (fixation_sample.fixationMap.values[0].shape[1], fixation_sample.fixationMap.values[0].shape[0])
 
-    print('Log..... save fixation map')
-    map(fixation_sample.fixationMap.values[0], path, fixation_sample.stimName.values[0])
-    print('Log... save scanpath')
-    scanpath(scanpath_sample.scanpath, path, scanpath_sample.stimName, False)
+    print('Log..... building fixation map')
+    map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, fixation_sample.stimName.values[0])
+    print('Log... building scanpath')
+    scanpath(scanpath_sample.scanpath, imgToPlot_size, path, scanpath_sample.stimName, False)
 
     return

@@ -6,7 +6,7 @@ from sklearn.utils import shuffle
 import pandas as pd
 import pickle
 
-COLLECTION_PATH = os.path.dirname(os.path.abspath(__file__)) + '/raw_data'
+COLLECTION_PATH = os.path.dirname(os.path.abspath(__file__)) + '/etp_data'
 
 def get_raw_data():
 
@@ -67,7 +67,7 @@ def get_fixation_maps_and_labels():
     fixation_df = pd.DataFrame(fixation_dataset)
     fixation_df.columns = ['stimName', 'stimType', 'sampleId', 'fixationMap', 'bid']
     # hack for removing 999 bids (should have be done on the data tidying)
-    fixation_df = fixation_df[fixation_df.bid != 999]
+    #fixation_df = fixation_df[fixation_df.bid != 999]
     maps = []
 
     for map in fixation_df.fixationMap:
@@ -101,7 +101,7 @@ def get_scanpath_df():
     scanpath_df.columns = ['stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
 
     #hack for removing 999 bids (should have be done on the data tidying)
-    scanpath_df = scanpath_df[scanpath_df.bid != 999]
+    #scanpath_df = scanpath_df[scanpath_df.bid != 999]
 
     return scanpath_df
 
@@ -124,7 +124,7 @@ def get_fixation_df():
     fixation_df.columns = ['stimName', 'stimType', 'sampleId', 'fixationMap', 'bid']
 
     #hack for removing 999 bids (should have be done on the data tidying)
-    fixation_df = fixation_df[fixation_df.bid != 999]
+    #fixation_df = fixation_df[fixation_df.bid != 999]
 
     return fixation_df
 
@@ -147,8 +147,8 @@ def data_to_fixation_map_by_sampleId(data_df, sampleId):
     if len(x) | len(y) < 5:
         print('Fixation data is None for sampleId: ', sampleId)
         return None
-    xedges = np.arange(576)
-    yedges = np.arange(432)
+    xedges = np.arange(690) #576 TODO add the max image size as const
+    yedges = np.arange(600) #432
 
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
     heatmap = heatmap.T  # Let each row list bins with common y range.
