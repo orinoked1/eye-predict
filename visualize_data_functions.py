@@ -90,11 +90,11 @@ def visualize(fixation_df, scanpath_df, stimType):
 
     sample = fixation_sample['sampleId'].values[0]
     print(sample)
-    y = os.getcwd()
-    raw_data_df = pd.read_csv(y + '/raw_data_01.csv')
-    parser.data_tidying(raw_data_df, [1080, 1920])
-    temp_df = raw_data_df[raw_data_df['subjectID']==int(sample[0:3])]
-    temp_df = temp_df[temp_df['stimName']==str(sample[4:])]
+    #y = os.getcwd()
+    #raw_data_df = pd.read_csv(y + '/raw_data_01.csv')
+    #parser.data_tidying(raw_data_df, [1080, 1920])
+    #temp_df = raw_data_df[raw_data_df['subjectID']==int(sample[0:3])]
+    #temp_df = temp_df[temp_df['stimName']==str(sample[4:])]
 
     sample_index = fixation_sample.index[0]
     scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
