@@ -33,19 +33,25 @@ def get_raw_data():
 
 y = os.getcwd()
 # read csv into DF
-raw_data_df = pd.read_csv(y + '/output_data_both_eyes_101_117.csv')
-fix_df, sacc_df = parser.data_tidying_for_analysis(raw_data_df, [1080, 1920])
+
+raw_data_df_101_117 = pd.read_csv(y + '/output_data_both_eyes_101_117.csv')
+raw_data_df_118_125 = pd.read_csv(y + '/output_data_both_eyes_118_125.csv')
+allSubjectsData = pd.concat([raw_data_df_101_117, raw_data_df_118_125])
+fix_df, sacc_df, fix_N, sacc_N = parser.data_tidying_for_analysis(allSubjectsData, [1080, 1920])
+
 
 fix_df_calc = fix_df[fix_df['eye'] == 'R']
 fix_df_calc.reset_index(drop=True, inplace=True)
 fix_df_calc['fix_count'] = fix_df_calc.groupby('sampleId')['sampleId'].transform('count')
 fix_df_calc['avg_fix_duration'] = fix_df_calc.groupby('sampleId')['duration'].transform('mean')
 first_fix_data = fix_df_calc.groupby('sampleId').first().reset_index()
-first_fix_corr = first_fix_data.corr(method ='pearson')
-last_fix_data = fix_df_calc.groupby('sampleId').nth(-1).reset_index()
-last_fix_corr = last_fix_data.corr(method ='pearson')
-
-fix_corr_df = fix_df_calc.corr(method ='pearson')
+fix_corr = first_fix_data.groupby(['subjectID', 'stimId']).corr(method='spearman')
+fix_corr.to_csv('fixations_correlation_by_subject_stimType.csv')
+#first_fix_corr = first_fix_data.corr(method ='pearson')
+#last_fix_data = fix_df_calc.groupby('sampleId').nth(-1).reset_index()
+#last_fix_corr = last_fix_data.corr(method ='pearson')
+#fix_corr_df = fix_df_calc.corr(method ='pearson')
+#fix_corr_df.to_csv('fixations_correlations.csv')
 
 sacc_df_calc = sacc_df[sacc_df['eye'] == 'R']
 sacc_df_calc.reset_index(drop=True, inplace=True)
@@ -58,15 +64,19 @@ sacc_df_calc['Y_diff'] = sacc_df_calc['Y_diff'].abs()
 sacc_df_calc['avg_sacc_X_diff'] = sacc_df_calc.groupby('sampleId')['X_diff'].transform('mean')
 sacc_df_calc['avg_sacc_Y_diff'] = sacc_df_calc.groupby('sampleId')['Y_diff'].transform('mean')
 first_sacc_data = sacc_df_calc.groupby('sampleId').first().reset_index()
-first_sacc_corr = first_sacc_data.corr(method ='pearson')
-last_sacc_data = sacc_df_calc.groupby('sampleId').nth(-1).reset_index()
-last_sacc_corr = last_sacc_data.corr(method ='pearson')
+sacc_corr = first_sacc_data.groupby(['subjectID', 'stimId']).corr(method='spearman')
+sacc_corr.to_csv('saccade_correlation_by_subject_stimType.csv')
 
-sacc_corr_df = sacc_df_calc.corr(method ='pearson')
+#last_sacc_data = sacc_df_calc.groupby('sampleId').nth(-1).reset_index()
+#last_sacc_corr = last_sacc_data.corr(method ='pearson')
 
-ax = sns.scatterplot(x="bid", y="avg_sacc_X_diff", data=first_sacc_data)
-ax.set_title('Bid - Fix count Correlation')
-plt.show()
+#sacc_corr_df = sacc_df_calc.corr(method ='pearson')
+
+#sacc_corr_df.to_csv('saccades_correlations.csv')
+
+#ax = sns.scatterplot(x="bid", y="avg_sacc_X_diff", data=first_sacc_data)
+#ax.set_title('Bid - Fix count Correlation')
+#plt.show()
 
 print('x')
 

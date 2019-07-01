@@ -257,5 +257,5 @@ def data_tidying_for_analysis(df, screen_resolution):
     #SACCbyImgRegionDataDf.drop(SACCbyImgRegionDataDf.columns[[0]], axis=1, inplace=True)
 
 
-    return FIXbyImgRegionDataDf, SACCbyImgRegionDataDf
+    return FIXbyImgRegionDataDf, SACCbyImgRegionDataDf, fix_df_unique_after, sacc_df_unique_after
 
