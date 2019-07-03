@@ -4,8 +4,11 @@ import ds_readers as ds
 import visualize_data_functions as vis
 from eye_tracking_data_parser import raw_data_preprocess as parser
 import pickle
-import seaborn as sns; sns.set()
+import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 
 
 def get_raw_data():
@@ -33,11 +36,17 @@ def get_raw_data():
 
 y = os.getcwd()
 # read csv into DF
-
+"""
 raw_data_df_101_117 = pd.read_csv(y + '/output_data_both_eyes_101_117.csv')
 raw_data_df_118_125 = pd.read_csv(y + '/output_data_both_eyes_118_125.csv')
 allSubjectsData = pd.concat([raw_data_df_101_117, raw_data_df_118_125])
 fix_df, sacc_df, fix_N, sacc_N = parser.data_tidying_for_analysis(allSubjectsData, [1080, 1920])
+
+fix_df.to_pickle("fix_df.pkl")
+sacc_df.to_pickle("sacc_df.pkl")
+"""
+fix_df = pd.read_pickle(y +"/fix_df.pkl")
+sacc_df = pd.read_pickle(y + "/sacc_df.pkl")
 
 
 fix_df_calc = fix_df[fix_df['eye'] == 'R']
@@ -67,16 +76,33 @@ first_sacc_data = sacc_df_calc.groupby('sampleId').first().reset_index()
 sacc_corr = first_sacc_data.groupby(['subjectID', 'stimId']).corr(method='spearman')
 sacc_corr.to_csv('saccade_correlation_by_subject_stimType.csv')
 
-#last_sacc_data = sacc_df_calc.groupby('sampleId').nth(-1).reset_index()
-#last_sacc_corr = last_sacc_data.corr(method ='pearson')
 
-#sacc_corr_df = sacc_df_calc.corr(method ='pearson')
 
-#sacc_corr_df.to_csv('saccades_correlations.csv')
-
-#ax = sns.scatterplot(x="bid", y="avg_sacc_X_diff", data=first_sacc_data)
-#ax.set_title('Bid - Fix count Correlation')
+#x = fixdata['bid']
+#plt.hist(x)
 #plt.show()
+
+# MLM fix
+"""
+fixdata = first_fix_data[first_fix_data['stimId'] == 1]
+fixdata = fixdata[['bid', 'fix_count', 'subjectID']]
+endog = fixdata["bid"]
+fixdata["Intercept"] = 1
+exog = fixdata[["Intercept", "fix_count"]]
+md = sm.MixedLM(endog, exog, groups=fixdata["subjectID"], exog_re=exog)
+mdf = md.fit()
+print(mdf.summary())
+"""
+# MLM fix
+saccdata = first_sacc_data[first_sacc_data['stimId'] == 1]
+saccdata = saccdata[['bid', 'avg_sacc_X_diff', 'subjectID']]
+endog = saccdata["bid"]
+saccdata["Intercept"] = 1
+exog = saccdata[["Intercept", "avg_sacc_X_diff"]]
+md = sm.MixedLM(endog, exog, groups=saccdata["subjectID"], exog_re=exog)
+mdf = md.fit()
+print(mdf.summary())
+
 
 print('x')
 
