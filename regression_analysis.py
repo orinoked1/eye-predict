@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from eye_tracking_data_parser import raw_data_preprocess as parser
+from eye_tracking_data_parser import eyeTracker_data_preprocess as parser
 import statsmodels.api as sm
 from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
@@ -14,12 +14,12 @@ def get_raw_data():
 
     #read 'scale_ranking_bmm_short_data' row data into csv
     #TODO: read info from config file
-    y = os.getcwd()
-    asc_files_path = y+'/etp_data/Output_118_125'
-    txt_files_path = y+'/etp_data/Output_118_125'
-    trial_satart_str = 'TrialStart'
-    trial_end_str = 'ScaleStart'
-    csv_file_name = "output_data_both_eyes_118_125.csv"
+    path = os.getcwd()
+    asc_files_path = path +'/CAT_MRI_faces_data'
+    txt_files_path = path +'/CAT_MRI_faces_data'
+    trial_satart_str = 'trial'
+    trial_end_str = 'fixation cross'
+    csv_file_name = "CAT_MRI_faces_data.csv"
 
 
     data_csv_path = parser.raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name)
@@ -30,10 +30,10 @@ def get_raw_data():
 
     return data_csv_path
 
-#path = get_raw_data()
+path = get_raw_data()
 
 
-y = os.getcwd()
+path = os.getcwd()
 # read csv into DF
 """
 raw_data_df_101_117 = pd.read_csv(y + '/output_data_both_eyes_101_117.csv')
@@ -44,8 +44,9 @@ fix_df, sacc_df, fix_N, sacc_N = parser.data_tidying_for_analysis(allSubjectsDat
 fix_df.to_pickle("fix_df.pkl")
 sacc_df.to_pickle("sacc_df.pkl")
 """
-fix_df = pd.read_pickle(y +"/fix_df.pkl")
-sacc_df = pd.read_pickle(y + "/sacc_df.pkl")
+
+fix_df = pd.read_pickle(path +"/fix_df.pkl")
+sacc_df = pd.read_pickle(path + "/sacc_df.pkl")
 
 fix_df_calc = fix_df[fix_df['eye'] == 'R']
 fix_df_calc.reset_index(drop=True, inplace=True)

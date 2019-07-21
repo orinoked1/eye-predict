@@ -1,7 +1,8 @@
 
 import pandas as pd
-from sklearn import datasets, linear_model
+from sklearn import linear_model
 import os
+import matplotlib.pyplot as plt
 
 
 def oneSubject_oneStimID_multipleLinear_regression(subjectID, fix_dataDF, sacc_dataDF, stimType):
@@ -11,7 +12,7 @@ def oneSubject_oneStimID_multipleLinear_regression(subjectID, fix_dataDF, sacc_d
 
     fixData = fixData[fixData['subjectID'] == subjectID]
     if fixData.empty:
-        return
+        return 0, 0
     saccData = saccData[saccData['subjectID'] == subjectID]
     dataDF  = pd.concat([fixData.set_index('sampleId'),saccData.set_index('sampleId')], axis=1, join='inner').reset_index()
     dataDF = dataDF.loc[:,~dataDF.columns.duplicated()]
@@ -36,14 +37,13 @@ def oneSubject_oneStimID_multipleLinear_regression(subjectID, fix_dataDF, sacc_d
     lm = linear_model.LinearRegression()
     model = lm.fit(X, y)
     #predictions
-    #predictions = lm.predict(X)
-    #print(predictions[0:5])
+    predictions = lm.predict(X)
     #score
-
+    score = lm.score(X, y)
     print('Score for subjectId - ', subjectId)
-    print(lm.score(X, y))
+    print(score)
 
-    return
+    return subjectId, score
 
 
 # Load the data (fixation or saccade)
@@ -51,6 +51,14 @@ path = os.getcwd()
 fixation_data = pd.read_csv(path + "/fixation_data.csv")
 saccade_data = pd.read_csv(path + "/saccade_data.csv")
 subjects = range(102,126)
-for subjectId in subjects:
-    # stim type - Face or Snack
-    oneSubject_oneStimID_multipleLinear_regression(subjectId, fixation_data, saccade_data, 'Face')
+stimTypes = ['Face', 'Snack']
+allSubjects_scores = []
+for stim in stimTypes:
+    for subjectId in subjects:
+        # stim type - Face or Snack
+        subjectId, score = oneSubject_oneStimID_multipleLinear_regression(subjectId, fixation_data, saccade_data, stim)
+        subjectScore = [stim, subjectId, score]
+        allSubjects_scores.append(subjectScore)
+
+scoresDF = pd.DataFrame(allSubjects_scores, columns=['stimType', 'subjectId', 'score'])
+scoresDF.to_csv('scoresDF.csv')
