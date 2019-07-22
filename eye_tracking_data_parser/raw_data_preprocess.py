@@ -1,17 +1,21 @@
-
+"""
+Original code for runing my experiment data and process it.
+The code is relevant for both eyes recorded.
+For the analysis you should use the func - 'data_tidying_for_analysis'
+"""
 import pandas as pd
 import codecs
 import os
 import glob
 
-EYE_TRACKER_SAMPLE_RATE = 3100
+EYE_TRACKER_SAMPLE_RATE = 3000
 
 
 def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
     flag = 0
     # Set directory name that contains output directory with asc and txt files
-    asc_directory = asc_files_path #'../row_data/scale_ranking_bmm_short_data/output/asc'
-    txt_directory = txt_files_path #'../row_data/scale_ranking_bmm_short_data/output/txt'
+    asc_directory = asc_files_path
+    txt_directory = txt_files_path
     # Set string represents trail start data records
     indexStartStr = trial_satart_str #'TrialStart'
     # Set string represents trail ends data records
@@ -93,7 +97,7 @@ def find_stim_boundaries(screen_resolution, stim_resolution):
     return min_x, max_x, min_y, max_y
 
 
-def data_tidying(df, screen_resolution):
+def data_tidying_for_dataset_building(df, screen_resolution):
     print('Log..... Data tidying')
     # Change X, Y and timeStamp data from String to Numeric changing strings " . ", "EBLINK", FIX", "SACC" to nan
     df.X_axis = pd.to_numeric(df.X_axis, errors='coerce')
@@ -144,9 +148,10 @@ def data_tidying(df, screen_resolution):
 
     return byImgRegionDataDf
 
-def data_tidying_for_analysis(df, screen_resolution):
+def data_tidying_for_analysis(df, screen_resolution, snack_stim_size, face_stim_size):
     print('Log..... Data tidying')
 
+    # Get relevant raw data for fixations and saccades
     Efix_df = df[df['timeStamp'].str.contains('EFIX', na=False)]
     Efix_df.dropna(inplace=True, axis=1)
     fix_action = Efix_df["timeStamp"].str.split(expand=True)
@@ -167,16 +172,15 @@ def data_tidying_for_analysis(df, screen_resolution):
     sacc_df.drop(['to_remove1', 'to_remove'], inplace=True, axis=1)
     sacc_df.reset_index(drop=True, inplace=True)
 
-    # Change X, Y and timeStamp data from String to Numeric changing strings " . " to nan
-    dfs = [fix_df, sacc_df]
+    # List of all fields that will be updated for later use (fixation and saccade)
     df_fields = ['S_timeStamp', 'E_timeStamp', 'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'S_X_axis',
                  'S_Y_axis', 'E_X_axis', 'E_Y_axis']
 
-    # update subjectID to be unique between expirements (fix should be at the raw_data_to_csv def)
     # add 'sampleId' field for each uniqe sample
     fix_df['sampleId'] = fix_df['subjectID'].astype(str) + '_' + fix_df['stimName'].astype(str)
-    fix_df_unique_before = fix_df.sampleId.nunique()
+    # Removes data with no bid value
     fix_df = fix_df[fix_df.bid != 999]
+    # For each field update relevant type and clean not relevant data
     for field in df_fields:
         if field in fix_df.columns:
             print(field)
@@ -189,10 +193,11 @@ def data_tidying_for_analysis(df, screen_resolution):
             fix_df[field] = fix_df[field].astype(int)
             fix_df.reset_index(drop=True, inplace=True)
 
-
+    # add 'sampleId' field for each uniqe sample
     sacc_df['sampleId'] = sacc_df['subjectID'].astype(str) + '_' + sacc_df['stimName'].astype(str)
-    sacc_df_unique_before = sacc_df.sampleId.nunique()
+    # Removes data with no bid value
     sacc_df = sacc_df[sacc_df.bid != 999]
+    # For each field update relevant type and clean not relevant data
     for field in df_fields:
         if field in sacc_df.columns:
             print(field)
@@ -205,17 +210,21 @@ def data_tidying_for_analysis(df, screen_resolution):
             sacc_df[field] = sacc_df[field].astype(int)
             sacc_df.reset_index(drop=True, inplace=True)
 
+    # In this section for each stim (snack or face) get the datapoints within the stim boundaries
+    # For fixation dataset and for saccade dataset
+    # TODO: Create one function that gets for input the stim type and size
+    #  and outputs the DF with only datapoints within the stim region
 
-    # stim is snack
+    # FIXATION - stim is snack
     stim_id = 2
-    stim_resolution = ([520,690])
+    stim_resolution = (snack_stim_size)
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
     FIXstimARegionDataDf = fix_df[((fix_df['stimId'] == stim_id) & (fix_df['avg_X_axis'] >= min_x) & (fix_df['avg_X_axis'] <= max_x) &
                                    (fix_df['avg_Y_axis'] >= min_y) & (fix_df['avg_Y_axis'] <= max_y)) == True]
 
-    #stim face
-    stim_resolution = ([600, 480])
+    # FIXATION - stim face
+    stim_resolution = (face_stim_size)
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     #get only datapoints within stim boundaries
     FIXstimBRegionDataDf = fix_df[(((fix_df['stimId'] != stim_id) & (fix_df['avg_X_axis'] >= min_x) & (fix_df['avg_X_axis'] <= max_x) & (
@@ -226,17 +235,17 @@ def data_tidying_for_analysis(df, screen_resolution):
     FIXbyImgRegionDataDf.reset_index(drop=True, inplace=True)
     #FIXbyImgRegionDataDf.drop(FIXbyImgRegionDataDf.columns[[0]], axis=1, inplace=True)
 
-    # stim is snack
+    # SACCADE - stim is snack
     stim_id = 2
-    stim_resolution = ([520, 690])
+    stim_resolution = (snack_stim_size)
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
     SACCstimARegionDataDf = sacc_df[((sacc_df['stimId'] == stim_id) & (sacc_df['S_X_axis'] >= min_x) & (sacc_df['S_X_axis'] <= max_x) &
                             (sacc_df['S_Y_axis'] >= min_y) & (sacc_df['S_Y_axis'] <= max_y) & (sacc_df['E_X_axis'] >= min_x) & (sacc_df['E_X_axis'] <= max_x) &
                             (sacc_df['E_Y_axis'] >= min_y) & (sacc_df['E_Y_axis'] <= max_y)) == True]
 
-    # stim face
-    stim_resolution = ([600, 480])
+    # SACCADE - stim face
+    stim_resolution = (face_stim_size)
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
     SACCstimBRegionDataDf = sacc_df[(((sacc_df['stimId'] != stim_id) & (sacc_df['S_X_axis'] >= min_x) & (sacc_df['S_X_axis'] <= max_x) & (
@@ -247,7 +256,6 @@ def data_tidying_for_analysis(df, screen_resolution):
     SACCbyImgRegionDataDf = pd.concat([SACCstimARegionDataDf, SACCstimBRegionDataDf])
     sacc_df_unique_after = SACCbyImgRegionDataDf.sampleId.nunique()
     SACCbyImgRegionDataDf.reset_index(drop=True, inplace=True)
-    #SACCbyImgRegionDataDf.drop(SACCbyImgRegionDataDf.columns[[0]], axis=1, inplace=True)
 
 
     return FIXbyImgRegionDataDf, SACCbyImgRegionDataDf, fix_df_unique_after, sacc_df_unique_after

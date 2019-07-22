@@ -1,39 +1,38 @@
-
+"""
+A try for running the code on Tomas data.
+Also try to separate for different func so we can consider all cases.
+This is not complete and not working for Tomas code.
+"""
 import pandas as pd
 import codecs
 import os
 import glob
 
-EYE_TRACKER_SAMPLE_RATE = 3100
 
-
-def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
+def bothEye_data_to_csv_by_trial_str(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
     flag = 0
     # Set directory name that contains output directory with asc and txt files
-    asc_directory = asc_files_path
-    txt_directory = txt_files_path
+    asc_directory = asc_files_path #'../row_data/scale_ranking_bmm_short_data/output/asc'
+    txt_directory = txt_files_path #'../row_data/scale_ranking_bmm_short_data/output/txt'
     # Set string represents trail start data records
     indexStartStr = trial_satart_str #'TrialStart'
     # Set string represents trail ends data records
     indexEndStr = trial_end_str #'ScaleStart'
-    # Set trial duration in millisec
-    trial_duration = 2000 #in millisec
-
     # Run over each Ascii file and open it
-    for ascFile in glob.glob(asc_directory + '//*Response_1.asc'):
+    for ascFile in glob.glob(asc_directory + '//*asc'):
         ascFileName = os.path.basename(ascFile)
         tempList = ascFileName.split('_')
-        subjectIntId = tempList[2]
+        subjectIntId = tempList[0]
         print('Log.....Getting Ascii file data - ' + ascFileName)
         ascFile = codecs.open(asc_directory + '//' + ascFileName, encoding='utf-8-sig')
         ascData = ascFile.readlines()
         # Split data to columns and get only relevnt ones
         ascDf = pd.DataFrame(ascData, columns=['data'])
         ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
-        ascDf = ascDf[[0, 1, 2, 3]]
+        ascDf = ascDf[[0, 1, 2, 3, 4, 5, 6]]
         print('Log.....Getting txt file data for subject id - ' + subjectIntId)
         # Read txt file of subject same subject as asc file
-        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId + '*Response_1.txt')[0])
+        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId +'_Scale'+ '*txt')[0])
         txtData = pd.read_table(txt_directory + '//' + txtFileName)
         # Get number of trials and subject ID
         trialCount = txtData.count()[0]
@@ -41,10 +40,9 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
         print('Log.....Runing over all trials of subject id - ' + subjectIntId)
         # Run over all trials per user and merge the asc data with the txt data
         for trial in range(trialCount):
-            trial_str = 'trial ' + str(trial + 1)
+            trial_str = 'Trial' + str(trial + 1).zfill(3)
             indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
                                ascDf[1].str.contains(trial_str, na=False)].index[0] + 1
-            end_timestamp = int(ascDf[0].iloc[[indexStart]]) + trial_duration
             indexEnd = ascDf[ascDf[1].str.contains(indexEndStr, na=False) &
                              ascDf[1].str.contains(trial_str, na=False)].index[0] - 1
             # Get the data, starting from 'TrialStart' to subjects 'Response'
@@ -56,7 +54,7 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
                 allTrialsData = pd.DataFrame(columns=mergeData.columns)
             allTrialsData = pd.concat([allTrialsData, mergeData])
             print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
-        """
+
         # get only dominant eye data
         txtFilePersonalDataName = os.path.basename(
             glob.glob(txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
@@ -69,7 +67,69 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
         else:
             #allTrialsData = allTrialsData.drop([4, 5, 6], axis=1)
             allTrialsData['dominant_eye'] = 'L'
-            """
+
+        # Appending all data to one DataFrame
+        if flag == 0:
+            allSubjectsData = pd.DataFrame(columns=allTrialsData.columns)
+            flag = 1
+        allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
+
+    # Rename columns if needed
+    #allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+     #                          'timeStamp', 'L_X_axis', 'L_Y_axis', 'L_pupil_size', 'R_X_axis', 'R_Y_axis', 'R_pupil_size', 'dominant_eye']
+
+    # Store all subjects data DF as CSV
+    allSubjectsData.to_csv(csv_file_name) #'scale_ranking_bmm_short_data_df.csv'
+    current_path = os.getcwd() # update if needed
+    data_csv_path = current_path + csv_file_name
+    #returns path for data csv file
+    return data_csv_path
+
+def oneEye_data_to_csv_by_trial_str(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name):
+    flag = 0
+    # Set directory name that contains output directory with asc and txt files
+    asc_directory = asc_files_path #'../row_data/scale_ranking_bmm_short_data/output/asc'
+    txt_directory = txt_files_path #'../row_data/scale_ranking_bmm_short_data/output/txt'
+    # Set string represents trail start data records
+    indexStartStr = trial_satart_str #'TrialStart'
+    # Set string represents trail ends data records
+    indexEndStr = trial_end_str #'ScaleStart'
+    # Run over each Ascii file and open it
+    for ascFile in glob.glob(asc_directory + '//*asc'):
+        ascFileName = os.path.basename(ascFile)
+        tempList = ascFileName.split('_')
+        subjectIntId = tempList[0]
+        print('Log.....Getting Ascii file data - ' + ascFileName)
+        ascFile = codecs.open(asc_directory + '//' + ascFileName, encoding='utf-8-sig')
+        ascData = ascFile.readlines()
+        # Split data to columns and get only relevnt ones
+        ascDf = pd.DataFrame(ascData, columns=['data'])
+        ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
+        ascDf = ascDf[[0, 1, 2, 3, 4, 5, 6]]
+        print('Log.....Getting txt file data for subject id - ' + subjectIntId)
+        # Read txt file of subject same subject as asc file
+        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId +'_Scale'+ '*txt')[0])
+        txtData = pd.read_table(txt_directory + '//' + txtFileName)
+        # Get number of trials and subject ID
+        trialCount = txtData.count()[0]
+        # subjectId = txtData['subjectID'][0]
+        print('Log.....Runing over all trials of subject id - ' + subjectIntId)
+        # Run over all trials per user and merge the asc data with the txt data
+        for trial in range(trialCount):
+            trial_str = 'Trial' + str(trial + 1).zfill(3)
+            indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
+                               ascDf[1].str.contains(trial_str, na=False)].index[0] + 1
+            indexEnd = ascDf[ascDf[1].str.contains(indexEndStr, na=False) &
+                             ascDf[1].str.contains(trial_str, na=False)].index[0] - 1
+            # Get the data, starting from 'TrialStart' to subjects 'Response'
+            trialData = ascDf.loc[indexStart:indexEnd]
+            # trialData['subjectID'] = subjectIntId
+            trialData['trial'] = trial + 1
+            mergeData = pd.merge(txtData, trialData, on='trial')
+            if (trial + 1 == 1):
+                allTrialsData = pd.DataFrame(columns=mergeData.columns)
+            allTrialsData = pd.concat([allTrialsData, mergeData])
+            print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
 
         # Appending all data to one DataFrame
         if flag == 0:
@@ -83,6 +143,87 @@ def raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_
 
     # Store all subjects data DF as CSV
     allSubjectsData.to_csv(csv_file_name) #'scale_ranking_bmm_short_data_df.csv'
+    current_path = os.getcwd() # update if needed
+    data_csv_path = current_path + csv_file_name
+    #returns path for data csv file
+    return data_csv_path
+
+
+def oneEye_data_to_csv_by_startSTR_and_duration_calc(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name, stim_duration):
+    flag = 0
+    # Set directory name that contains output directory with asc and txt files
+    asc_directory = asc_files_path
+    txt_directory = txt_files_path
+    # Set string represents trail start data records
+    indexStartStr = trial_satart_str #'TrialStart'
+    # Set string represents trail ends data records
+    indexEndStr = trial_end_str #'ScaleStart'
+    # Set trial duration in millisec
+    trial_duration = stim_duration - (stim_duration/10) # in millisec
+
+    # Run over each Ascii file and open it
+    for ascFile in glob.glob(asc_directory + '//*Response_1.asc'):
+        ascFileName = os.path.basename(ascFile)
+        tempList = ascFileName.split('_')
+        subjectIntId = tempList[2]
+        print('Log.....Getting Ascii file data - ' + ascFileName)
+        ascFile = codecs.open(asc_directory + '//' + ascFileName, encoding='utf-8-sig')
+        ascData = ascFile.readlines()
+        # Split data to columns and get only relevnt ones
+        ascDf = pd.DataFrame(ascData, columns=['data'])
+        ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
+        ascDf = ascDf[[0, 1, 2, 3]]
+        # Rename columns
+        ascDf.rename(columns={0: "timeStamp", 1: "X_axis", 2: "Y_axis", 3: "pupil_size"}, inplace=True)
+        print('Log.....Getting txt file data for subject id - ' + subjectIntId)
+        # Read txt file of subject same subject as asc file
+        txtFileName = os.path.basename(glob.glob(txt_directory + '//*' + subjectIntId + '*Response_1.txt')[0])
+        txtData = pd.read_table(txt_directory + '//' + txtFileName)
+        # Get number of trials and subject ID
+        trialCount = txtData.count()[0]
+        # add trial num column to txt dataFrame
+        txtData['trial'] = range(trialCount)
+        txtData['trial'] = txtData['trial'] + 1
+        # subjectId = txtData['subjectID'][0]
+        print('Log.....Runing over all trials of subject id - ' + subjectIntId)
+        # Run over all trials per user and merge the asc data with the txt data
+        for trial in range(trialCount):
+            trial_str = 'trial ' + str(trial + 1)
+            indexStart = ascDf[ascDf["X_axis"].str.contains(indexStartStr, na=False) &
+                               ascDf["X_axis"].str.contains(trial_str, na=False)].index[0]
+            timestamp = ascDf["X_axis"].iloc[[indexStart]] .str.split(expand=True)[0].values[0]
+            #t = ascDf["timeStamp"].iloc[[indexStart]]
+            #tt = t.str.contains('BLINK', regex=False)
+            #if tt.values[0] == True:
+            #    indexStart = indexStart + 1
+                #timestamp = t.str.split(expand=True)[2].values[0]
+                #indexStart = ascDf[ascDf["timeStamp"].str.contains(timestamp, na=False)].index[0] + 1
+            end_timestamp = str(int(timestamp) + int(trial_duration+2))
+            indexEnd = ascDf[ascDf["timeStamp"] == end_timestamp].index[0]
+            # Get the data, starting from 'TrialStart' to subjects 'Response'
+            trialData = ascDf.loc[indexStart:indexEnd]
+            # trialData['subjectID'] = subjectIntId
+            trialData['trial'] = trial + 1
+            mergeData = pd.merge(txtData, trialData, on='trial')
+            if (trial + 1 == 1):
+                allTrialsData = pd.DataFrame(columns=mergeData.columns)
+            allTrialsData = pd.concat([allTrialsData, mergeData])
+            print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
+
+        # Appending all data to one DataFrame
+        if flag == 0:
+            allSubjectsData = pd.DataFrame(columns=allTrialsData.columns)
+            flag = 1
+        allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
+
+
+    allSubjectsData.reset_index(drop=True, inplace=True)
+    # choose columns
+    #allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+     #                          'timeStamp', 'L_X_axis', 'L_Y_axis', 'L_pupil_size', 'R_X_axis', 'R_Y_axis', 'R_pupil_size', 'dominant_eye']
+
+    # Store all subjects data DF as CSV
+    allSubjectsData.to_csv('CAT_MRI_faces_data/preprocessed_csv/' + csv_file_name)
     current_path = os.getcwd() # update if needed
     data_csv_path = current_path + csv_file_name
     #returns path for data csv file
