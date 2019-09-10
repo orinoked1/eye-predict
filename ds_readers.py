@@ -187,7 +187,7 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
     t = data_df[data_df['sampleId'] == sampleId].timeStamp
     x = data_df[data_df['sampleId'] == sampleId].X_axis
     y = data_df[data_df['sampleId'] == sampleId].Y_axis
-    if len(x) | len(y) < 5:
+    if len(x) | len(y) < 100:
         print('Scanpath data is None for sampleId: ', sampleId)
         return None
     scanpath.append(t)
@@ -199,7 +199,7 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
     return np.asanyarray(scanpath)
 
 def get_scanpath_dataset(data_df, screen_resolution, downsamplemillisec = 4):
-    data_df = parser.data_tidying(data_df, screen_resolution)
+    data_df = parser.data_tidying_for_dataset_building(data_df, screen_resolution)
     print('Log..... Build scanpath dataset')
     scanpath_dataset = []
     for sampleId in data_df.sampleId.unique():

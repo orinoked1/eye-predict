@@ -25,18 +25,18 @@ def get_raw_data():
 
     return data_csv_path
 
-path = get_raw_data()
+#path = get_raw_data()
 
 
 path = os.getcwd()
 # Run this only once so you wont need to tide the data again (tidying takes time)
 # read csv into DF
-data = pd.read_csv(path + 'etp_processed_data.csv') # This is only for example the in no file with this name
-fix_df, sacc_df, fix_N, sacc_N = parser.data_tidying_for_analysis(data, [1080, 1920], [520,690], [600, 480])
-fix_df.to_pickle("fix_df.pkl")
-sacc_df.to_pickle("sacc_df.pkl")
-
-# One you run the above mark it as comment and just read the tidy pickle into a DF
+###data = pd.read_csv(path + 'etp_processed_data.csv') # This is only for example the in no file with this name
+###fix_df, sacc_df, fix_N, sacc_N = parser.data_tidying_for_analysis(data, [1080, 1920], [520,690], [600, 480])
+###fix_df.to_pickle("fix_df.pkl")
+###sacc_df.to_pickle("sacc_df.pkl")
+"""
+# Once you run the above mark it as comment and just read the tidy pickle into a DF
 fix_df = pd.read_pickle(path +"fix_df.pkl")
 sacc_df = pd.read_pickle(path + "sacc_df.pkl")
 
@@ -61,7 +61,7 @@ sacc_df_calc['avg_sacc_X_diff'] = sacc_df_calc.groupby('sampleId')['X_diff'].tra
 sacc_df_calc['avg_sacc_Y_diff'] = sacc_df_calc.groupby('sampleId')['Y_diff'].transform('mean')
 first_sacc_data = sacc_df_calc.groupby('sampleId').first().reset_index()
 first_sacc_data.to_csv('saccade_data.csv')
-
+"""
 # The above code will result getting the fixation and saccade dataframes that can be used in further analysis
 
 
@@ -116,11 +116,10 @@ def oneSubject_oneStimID_multipleLinear_regression(subjectID, fix_dataDF, sacc_d
     # data frame that contains the independent variables (marked as “df”)
     # and the data frame with the dependent variable (marked as “target”)
     if stimType == 'Face':
-        df = faceStimDF[['RT', 'fix_count', 'avg_fix_duration', 'sacc_count', 'avg_sacc_duration',
-                                'avg_sacc_X_diff', 'avg_sacc_Y_diff']]
+        df = faceStimDF[['fix_count']]
         target = faceStimDF.bid
     else:
-        df = snackStimDF[['RT', 'fix_count', 'avg_fix_duration', 'sacc_count', 'avg_sacc_duration',
+        df = snackStimDF[['fix_count', 'avg_fix_duration', 'sacc_count', 'avg_sacc_duration',
                          'avg_sacc_X_diff', 'avg_sacc_Y_diff']]
         target = snackStimDF.bid
 
@@ -141,8 +140,8 @@ def oneSubject_oneStimID_multipleLinear_regression(subjectID, fix_dataDF, sacc_d
 
 
 # Load the data (fixation or saccade)
-fixation_data = pd.read_csv(y + "/fixation_data.csv")
-saccade_data = pd.read_csv(y + "/saccade_data.csv")
+fixation_data = pd.read_csv(path + "/fixation_data.csv")
+saccade_data = pd.read_csv(path + "/saccade_data.csv")
 subjects = range(102,126)
 for subjectId in subjects:
     # stim type - Face or Snack
