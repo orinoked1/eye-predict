@@ -184,13 +184,13 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
     print('Log..... get scanpath data for sampleId: ', sampleId)
     #todo - add downsampling option for the data poinnts
     scanpath = []
-    t = data_df[data_df['sampleId'] == sampleId].timeStamp
-    x = data_df[data_df['sampleId'] == sampleId].X_axis
-    y = data_df[data_df['sampleId'] == sampleId].Y_axis
+    #t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
+    x = data_df[data_df['sampleId'] == sampleId].R_X_axis.astype(int)
+    y = data_df[data_df['sampleId'] == sampleId].R_Y_axis.astype(int)
     if len(x) | len(y) < 100:
         print('Scanpath data is None for sampleId: ', sampleId)
         return None
-    scanpath.append(t)
+    #scanpath.append(t)
     scanpath.append(x)
     scanpath.append(y)
 
@@ -198,19 +198,27 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
 
     return np.asanyarray(scanpath)
 
-def get_scanpath_dataset(data_df, screen_resolution, downsamplemillisec = 4):
-    data_df = parser.data_tidying_for_dataset_building(data_df, screen_resolution)
+def get_scanpath_dataset(df, screen_resolution, downsamplemillisec = 4):
+    try:
+        path = os.getcwd()
+        data_df = pd.read_pickle(path + "/data_df.pkl")
+    except:
+        data_df = parser.data_tidying_for_dataset_building(df, screen_resolution)
+        data_df.to_pickle("data_df.pkl")
+
     print('Log..... Build scanpath dataset')
     scanpath_dataset = []
     for sampleId in data_df.sampleId.unique():
         sample_data = []
         bid = data_df[data_df['sampleId'] == sampleId].bid.unique()
+        subjectID = data_df[data_df['sampleId'] == sampleId].subjectID.unique()
         stimName = data_df[data_df['sampleId'] == sampleId].stimName.unique()
         stimType = data_df[data_df['sampleId'] == sampleId].stimType.unique()
         sample = data_df[data_df['sampleId'] == sampleId].sampleId.unique()
         scanpath = data_to_scanpath(data_df, sampleId, downsamplemillisec)
         if type(scanpath) is not np.ndarray:
             continue
+        sample_data.append(subjectID[0])
         sample_data.append(stimName[0])
         sample_data.append(stimType[0])
         sample_data.append(sample[0])

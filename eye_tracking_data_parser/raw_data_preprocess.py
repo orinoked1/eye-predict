@@ -99,49 +99,49 @@ def find_stim_boundaries(screen_resolution, stim_resolution):
 
 def data_tidying_for_dataset_building(df, screen_resolution):
     print('Log..... Data tidying')
+
+    # add 'sampleId' field for each uniqe sample
+    df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
+    df.drop(['L_X_axis', 'L_Y_axis', 'L_pupil_size'], inplace=True, axis=1)
     # Change X, Y and timeStamp data from String to Numeric changing strings " . ", "EBLINK", FIX", "SACC" to nan
-    df.X_axis = pd.to_numeric(df.X_axis, errors='coerce')
-    df.Y_axis = pd.to_numeric(df.Y_axis, errors='coerce')
+    df.R_X_axis = pd.to_numeric(df.R_X_axis, errors='coerce')
+    df.R_Y_axis = pd.to_numeric(df.R_Y_axis, errors='coerce')
     df.timeStamp = pd.to_numeric(df.timeStamp, errors='coerce')
-    df.X_axis = df.X_axis.round()
-    df.Y_axis = df.Y_axis.round()
+    df.R_X_axis = df.R_X_axis.round()
+    df.R_Y_axis = df.R_Y_axis.round()
     # Remove Nan
     df.dropna(inplace=True)
-    df.X_axis = df.X_axis.astype(int)
-    df.Y_axis = df.Y_axis.astype(int)
+    df.R_X_axis = df.R_X_axis.astype(int)
+    df.R_Y_axis = df.R_Y_axis.astype(int)
+    df.timeStamp = df.timeStamp.astype(int)
     df = df[df.bid != 999]
     df.reset_index(drop=True, inplace=True)
 
-
-    #update subjectID to be unique between expirements (fix should be at the raw_data_to_csv def)
-    #df.loc[df.stimId == 1, 'subjectID'] = df['subjectID'].astype(str) + '01'
-    # add 'sampleId' field for each uniqe sample
-    df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
 
     # stim is snack
     stim_id = 2
     stim_resolution = ([520,690])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     # get only datapoints within stim boundaries
-    stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
-                         (df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+    stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['R_X_axis'] >= min_x) & (df['R_X_axis'] <= max_x) &
+                            (df['R_Y_axis'] >= min_y) & (df['R_Y_axis'] <= max_y)) == True]
     # Shifting x,y datapoint to start from (0,0) point
-    stimARegionDataDf.X_axis = stimARegionDataDf.X_axis - min_x
-    stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
+    #stimARegionDataDf.X_axis = stimARegionDataDf.X_axis - min_x
+    #stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
 
 
     #stim face
     stim_resolution = ([600, 480])
     min_x, max_x, min_y, max_y = find_stim_boundaries(screen_resolution, stim_resolution)
     #get only datapoints within stim boundaries
-    stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) & (
-            df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+    stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['R_X_axis'] >= min_x) & (df['R_X_axis'] <= max_x) & (
+                                   df['R_Y_axis'] >= min_y) & (df['R_Y_axis'] <= max_y)) == True]
 
     # Shifting x,y datapoint to start from (0,0) point
-    stimBRegionDataDf.X_axis = stimBRegionDataDf.X_axis - min_x
-    stimBRegionDataDf.Y_axis = stimBRegionDataDf.Y_axis - min_y
+    #stimBRegionDataDf.X_axis = stimBRegionDataDf.X_axis - min_x
+    #stimBRegionDataDf.Y_axis = stimBRegionDataDf.Y_axis - min_y
 
-    byImgRegionDataDf = pd.concat([stimARegionDataDf,stimBRegionDataDf])
+    byImgRegionDataDf = pd.concat([stimARegionDataDf, stimBRegionDataDf])
     byImgRegionDataDf.reset_index(drop=True, inplace=True)
     byImgRegionDataDf.drop(byImgRegionDataDf.columns[[0]], axis=1, inplace=True)
 
