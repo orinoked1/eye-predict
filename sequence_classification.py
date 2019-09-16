@@ -10,15 +10,14 @@ from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras.layers import Dropout
+from tensorflow.keras.layers import Dropout
 from keras.preprocessing import sequence
 from sklearn import preprocessing
 from sklearn.model_selection import StratifiedKFold
 from keras.layers import CuDNNLSTM
 import tensorflow as tf
 
-from keras.backend.tensorflow_backend import set_session
-import tensorflow as tf
+from tensorflow.keras.backend import set_session
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
