@@ -23,6 +23,10 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 set_session(sess)
 
+from numpy.random import seed
+seed(11)
+from tensorflow import set_random_seed
+set_random_seed(2)
 
 path = os.getcwd()
 
@@ -59,17 +63,13 @@ df = df[df['stimType'] == "Snack"]
 x_array = np.array(df['bid'])
 normalized_x = preprocessing.normalize([x_array])
 df['normalized_bid'] = normalized_x.reshape(2472, )
-# Normalize total_bedrooms column
-x_array = np.array(df['bid'])
-normalized_x = preprocessing.normalize([x_array])
-df['normalized_bid'] = normalized_x.reshape(2472, )
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
 X = df.scanpath
 y = df.binary_bid
 X = np.asanyarray(X)
 y = np.asanyarray(y)
 # truncate and pad input sequences
-max_review_length = 500
+max_review_length = 1500
 X = sequence.pad_sequences(X, maxlen=max_review_length)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.10)
@@ -78,44 +78,49 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 
 def original_run():
     # No permutations
-    # create the model
-    model = Sequential()
-    if use_gpu:
-        model.add(CuDNNLSTM(100, input_shape=(max_review_length, 2)))
-    else:
-        model.add(LSTM(100, input_shape=(max_review_length, 2)))
+    intialization_scores = []
+    for i in range(30):
+        print("Intialization number: %d" % i)
+        # create the model
+        model = Sequential()
+        with tf.device('gpu'):
+            model.add(LSTM(100, input_shape=(max_review_length, 2)))
+            model.add(Dense(1, activation='sigmoid'))
+            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+            # print(model.summary())
+            history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
 
-    model.add(Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-    # print(model.summary())
-    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
-
-    # Final evaluation of the model
-    score = model.evaluate(X_test, y_test, verbose=0)
-    print("Accuracy: %.2f%%" % (score[1] * 100))
+            # Final evaluation of the model
+            score = model.evaluate(X_test, y_test, verbose=0)
+            print("Accuracy: %.2f%%" % (score[1] * 100))
+    intialization_scores_df = pd.DataFrame(intialization_scores, columns=['scores'])
+    intialization_scores_df.to_csv("intialization_scores_df.csv")
 
 def permutations_run():
     permotation_scores = []
-    for i in range(1000):
+    for i in range(2):
         print("Permotation number: %d" % i)
         np.random.permutation(y_train)
         # create the model
-        model = Sequential()
-        model.add(LSTM(100, input_shape=(max_review_length, 2)))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-        # print(model.summary())
-        history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
+        with tf.device('gpu'):
+            model = Sequential()
+            model.add(LSTM(100, input_shape=(max_review_length, 2)))
+            model.add(Dense(1, activation='sigmoid'))
+            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+            # print(model.summary())
+            history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
 
-        # Final evaluation of the model
-        scores = model.evaluate(X_test, y_test, verbose=0)
-        permotation_scores.append(scores[1] * 100)
-        print("Accuracy: %.2f%%" % (scores[1] * 100))
+            # Final evaluation of the model
+            scores = model.evaluate(X_test, y_test, verbose=0)
+            permotation_scores.append(scores[1] * 100)
+            print("Accuracy: %.2f%%" % (scores[1] * 100))
 
     scores_df = pd.DataFrame(permotation_scores, columns=['scores'])
-    scores_df.to_csv("scores_df")
+    scores_df.to_csv("scores_df.csv")
 
-for i in range(4):
-    original_run()
+
+original_run()
+permutations_run()
+
 print("done")
 
