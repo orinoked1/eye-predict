@@ -92,13 +92,14 @@ def original_run():
 
             # Final evaluation of the model
             score = model.evaluate(X_test, y_test, verbose=0)
+            intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns=['scores'])
     intialization_scores_df.to_csv("intialization_scores_df.csv")
 
 def permutations_run():
     permotation_scores = []
-    for i in range(2):
+    for i in range(1000):
         print("Permotation number: %d" % i)
         np.random.permutation(y_train)
         # create the model
@@ -116,7 +117,7 @@ def permutations_run():
             print("Accuracy: %.2f%%" % (scores[1] * 100))
 
     scores_df = pd.DataFrame(permotation_scores, columns=['scores'])
-    scores_df.to_csv("scores_df.csv")
+    scores_df.to_csv("permotation_scores_df.csv")
 
 
 original_run()
