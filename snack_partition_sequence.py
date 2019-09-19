@@ -13,6 +13,8 @@ from keras.preprocessing import sequence
 from sklearn import preprocessing
 import tensorflow as tf
 from sklearn.utils import shuffle
+import keras.callbacks as cb
+from datetime import datetime
 
 from tensorflow.keras.backend import set_session
 config = tf.ConfigProto()
@@ -59,7 +61,7 @@ df = df[df['stimType'] == "Snack"]
 # Normalize total_bedrooms column
 x_array = np.array(df['bid'])
 normalized_x = preprocessing.normalize([x_array])
-df['normalized_bid'] = normalized_x.reshape(2647, )
+df['normalized_bid'] = normalized_x.reshape(2472, )
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
 
 df = df[((df['bid'] <= 4)&(df['bid'] >= 2)) | (df['bid'] <= 8)&(df['bid'] >= 6)]
@@ -73,7 +75,7 @@ p = df[df['2_9'] == 1].count()
 df0 = df[df['2_9'] == 0]
 df1 = df[df['2_9'] == 1]
 
-df0 = df0.sample(n=637, random_state=1)
+df1 = df1.sample(n=461, random_state=1)
 df = pd.concat([df0, df1])
 df = shuffle(df, random_state=1)
 
@@ -90,6 +92,16 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 unique, counts = np.unique(y_train, return_counts=True)
 y_Train_count = dict(zip(unique, counts))
 
+logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = cb.TensorBoard(log_dir=logdir)
+
+class LossHistory(cb.Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+
 def original_run():
     # No permutations
     intialization_scores = []
@@ -102,10 +114,12 @@ def original_run():
             model.add(Dense(1, activation='sigmoid'))
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
             # print(model.summary())
-            history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
+            history = LossHistory()
+            model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False, callbacks=[history, tensorboard_callback])
 
+            print(history.losses)
             # Final evaluation of the model
-            score = model.evaluate(X_test, y_test, verbose=0)
+            score = model.evaluate(X_test, y_test, verbose=0, callbacks=[history])
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
