@@ -1,6 +1,5 @@
 import os
 import ds_readers as ds
-import pickle
 import pandas as pd
 
 import numpy as np
@@ -10,12 +9,10 @@ from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-from tensorflow.keras.layers import Dropout
 from keras.preprocessing import sequence
 from sklearn import preprocessing
-from sklearn.model_selection import StratifiedKFold
-from keras.layers import CuDNNLSTM
 import tensorflow as tf
+from sklearn.utils import shuffle
 
 from tensorflow.keras.backend import set_session
 config = tf.ConfigProto()
@@ -31,7 +28,7 @@ set_random_seed(2)
 path = os.getcwd()
 
 try:
-    df = pd.read_pickle(path + "/etp_scanpath_df.pkl")
+    df = pd.read_pickle("etp_scanpath_df.pkl")
 except:
     raw_data_df_101_117 = pd.read_csv(path + '/output_data_both_eyes_101_117.csv')
     raw_data_df_118_125 = pd.read_csv(path + '/output_data_both_eyes_118_125.csv')
@@ -64,6 +61,22 @@ x_array = np.array(df['bid'])
 normalized_x = preprocessing.normalize([x_array])
 df['normalized_bid'] = normalized_x.reshape(2647, )
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
+
+df = df[(df['bid'] <= 3) | (df['bid'] >= 7)]
+df['2_9'] = np.where(df.bid <= 3, 0, 1)
+
+df.reset_index(inplace=True)
+df['2_9'] = df['2_9'].astype(int)
+q = df[df['2_9'] == 0].count()
+p = df[df['2_9'] == 1].count()
+
+df0 = df[df['2_9'] == 0]
+df1 = df[df['2_9'] == 1]
+
+df0 = df0.sample(n=361, random_state=1)
+df = pd.concat([df0, df1])
+df = shuffle(df, random_state=1)
+
 X = df.scanpath
 y = df.binary_bid
 X = np.asanyarray(X)
@@ -74,7 +87,8 @@ X = sequence.pad_sequences(X, maxlen=max_review_length)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.10)
 
-
+unique, counts = np.unique(y_train, return_counts=True)
+y_Train_count = dict(zip(unique, counts))
 
 def original_run():
     # No permutations
@@ -95,7 +109,7 @@ def original_run():
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
-    intialization_scores_df.to_csv("faceStim_intialization_scores_df.csv")
+    intialization_scores_df.to_csv("face_2_9_intialization_scores_df.csv")
 
 def permutations_run():
     permotation_scores = []
@@ -117,11 +131,11 @@ def permutations_run():
             print("Accuracy: %.2f%%" % (scores[1] * 100))
 
     scores_df = pd.DataFrame(permotation_scores, columns=['scores'])
-    scores_df.to_csv("faceStim_permotation_scores_df.csv")
+    scores_df.to_csv("permotation_scores_df.csv")
 
 
 original_run()
-permutations_run()
+#permutations_run()
 
 print("done")
 
