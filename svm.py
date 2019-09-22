@@ -70,15 +70,18 @@ for train_index, test_index in kf.split(X):
     print("Test score: ", clf.score(X_test, y_test))
     scores.append(clf.score(X_test, y_test))
 
-scores = np.asanyarray(scores)
-print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+svm_scores_df = pd.DataFrame(scores, columns = ['scores'])
+svm_scores_df.to_csv("svm_scores_df.csv")
+
+#scores = np.asanyarray(scores)
+#print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
 
 # parmotation runs
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 
 scores = []
-for i in range(1000):
+for i in range(10):
     print("Permotation number: %d" % i)
     y_train = np.random.permutation(y_train)
     clf = svm.SVC(kernel="rbf", gamma=0.0000001)
@@ -86,4 +89,6 @@ for i in range(1000):
     print("Train score: ", clf.score(X_train,y_train))
     print("Test score: ", clf.score(X_test,y_test))
     scores.append(clf.score(X_test,y_test))
-scores = np.asanyarray(scores)
+
+svm_parmotation_scores_df = pd.DataFrame(scores, columns = ['scores'])
+svm_parmotation_scores_df.to_csv("svm_parmotation_scores_df.csv")
