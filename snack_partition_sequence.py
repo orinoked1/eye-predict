@@ -92,8 +92,8 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 unique, counts = np.unique(y_train, return_counts=True)
 y_Train_count = dict(zip(unique, counts))
 
-logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
-tensorboard_callback = cb.TensorBoard(log_dir=logdir)
+#logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+#tensorboard_callback = cb.TensorBoard(log_dir=logdir)
 
 class LossHistory(cb.Callback):
     def on_train_begin(self, logs={}):
@@ -114,12 +114,13 @@ def original_run():
             model.add(Dense(1, activation='sigmoid'))
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
             # print(model.summary())
-            history = LossHistory()
-            model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False, callbacks=[history, tensorboard_callback])
+            #history = LossHistory()
+            #model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False, callbacks=[history])
+            model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False)
 
-            print(history.losses)
+            #print(history.losses)
             # Final evaluation of the model
-            score = model.evaluate(X_test, y_test, verbose=0, callbacks=[history])
+            score = model.evaluate(X_test, y_test, verbose=0)
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
