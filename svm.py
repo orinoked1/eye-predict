@@ -56,6 +56,7 @@ X = sequence.pad_sequences(X, maxlen=max_review_length)
 dataset_size = len(X)
 X = X.reshape(dataset_size,-1)
 
+#cross validation correct lables
 scores = []
 kf = KFold(n_splits=10, random_state=None, shuffle=True)
 for train_index, test_index in kf.split(X):
@@ -72,6 +73,8 @@ for train_index, test_index in kf.split(X):
 scores = np.asanyarray(scores)
 print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
+
+# parmotation runs
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 
 scores = []
