@@ -109,14 +109,14 @@ def original_run():
         print("Intialization number: %d" % i)
         # create the model
         model = Sequential()
-        with tf.device('gpu'):
+        with tf.device('cpu'):
             model.add(LSTM(100, input_shape=(max_review_length, 2)))
             model.add(Dense(1, activation='sigmoid'))
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
             # print(model.summary())
             #history = LossHistory()
             #model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False, callbacks=[history])
-            model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=1, shuffle=False)
+            model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
 
             #print(history.losses)
             # Final evaluation of the model
@@ -128,11 +128,11 @@ def original_run():
 
 def permutations_run():
     permotation_scores = []
-    for i in range(1000):
+    for i in range(100):
         print("Permotation number: %d" % i)
-        np.random.permutation(y_train)
+        y_train = np.random.permutation(y_train)
         # create the model
-        with tf.device('gpu'):
+        with tf.device('cpu'):
             model = Sequential()
             model.add(LSTM(100, input_shape=(max_review_length, 2)))
             model.add(Dense(1, activation='sigmoid'))
@@ -150,7 +150,7 @@ def permutations_run():
 
 
 original_run()
-#permutations_run()
+permutations_run()
 
 print("done")
 
