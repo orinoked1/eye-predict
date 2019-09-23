@@ -37,6 +37,7 @@ except:
 # prepering the data
 df = df[df.scanpath_len > 2300]  # > 75%
 df = df.reset_index()
+# Set the relevant stim
 df = df[df['stimType'] == "Face"]
 
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
@@ -45,9 +46,9 @@ X = df.scanpath
 y = df.binary_bid
 X = np.asanyarray(X)
 y = np.asanyarray(y)
-# truncate and pad input sequences
-max_review_length = 1500
-X = sequence.pad_sequences(X, maxlen=max_review_length)
+# Set the vector length - milliseconds size window.
+max_vector_length = 1500
+X = sequence.pad_sequences(X, maxlen=max_vector_length)
 
 dataset_size = len(X)
 X = X.reshape(dataset_size,-1)
