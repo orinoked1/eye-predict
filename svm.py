@@ -1,10 +1,6 @@
-from sklearn.utils import shuffle
 from keras.preprocessing import sequence
 from sklearn.model_selection import KFold
-from scipy.ndimage import gaussian_filter1d
-from sklearn.ensemble import ExtraTreesClassifier as tree
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn import svm
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -70,7 +66,7 @@ for train_index, test_index in kf.split(X):
     print("Test score: ", clf.score(X_test, y_test))
     scores.append(clf.score(X_test, y_test))
 
-svm_scores_df = pd.DataFrame(scores, columns = ['scores'])
+svm_scores_df = pd.DataFrame(scores, columns=['scores'])
 svm_scores_df.to_csv("svm_faces_scores_df.csv")
 
 #scores = np.asanyarray(scores)
@@ -90,5 +86,5 @@ for i in range(1000):
     print("Test score: ", clf.score(X_test,y_test))
     scores.append(clf.score(X_test,y_test))
 
-svm_parmotation_scores_df = pd.DataFrame(scores, columns = ['scores'])
+svm_parmotation_scores_df = pd.DataFrame(scores, columns=['scores'])
 svm_parmotation_scores_df.to_csv("svm_faces_parmotation_scores_df.csv")
