@@ -185,9 +185,9 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
     #todo - add downsampling option for the data poinnts
     scanpath = []
     #t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
-    x = data_df[data_df['sampleId'] == sampleId].R_X_axis.astype(int)
-    y = data_df[data_df['sampleId'] == sampleId].R_Y_axis.astype(int)
-    if len(x) | len(y) < 100:
+    x = data_df[data_df['sampleId'] == sampleId].avg_X_axis.astype(int)
+    y = data_df[data_df['sampleId'] == sampleId].avg_Y_axis.astype(int)
+    if len(x) | len(y) < 2:
         print('Scanpath data is None for sampleId: ', sampleId)
         return None
     #scanpath.append(t)

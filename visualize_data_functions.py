@@ -103,6 +103,6 @@ def visualize(fixation_df, scanpath_df, stimType):
     print('Log..... building fixation map')
     map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, fixation_sample.stimName.values[0])
     print('Log... building scanpath')
-    scanpath(scanpath_sample.scanpath, imgToPlot_size, path, scanpath_sample.stimName, False)
+    #scanpath(scanpath_sample.scanpath, imgToPlot_size, path, scanpath_sample.stimName, False)
 
     return

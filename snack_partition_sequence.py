@@ -11,16 +11,17 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.preprocessing import sequence
 from sklearn import preprocessing
-import tensorflow as tf
 from sklearn.utils import shuffle
 import keras.callbacks as cb
-from datetime import datetime
 
-from tensorflow.keras.backend import set_session
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
+config.log_device_placement = True  # to log device placement (on which device the operation ran)
+                                    # (nothing gets printed in Jupyter, only if you run it standalone)
 sess = tf.Session(config=config)
-set_session(sess)
+set_session(sess)  # set this TensorFlow session as the default session for Keras
 
 from numpy.random import seed
 seed(11)
@@ -104,12 +105,12 @@ class LossHistory(cb.Callback):
 
 def original_run():
     # No permutations
-    intialization_scores = []
-    for i in range(30):
-        print("Intialization number: %d" % i)
-        # create the model
-        model = Sequential()
-        with tf.device('cpu'):
+    with tf.device('gpu'):
+        intialization_scores = []
+        for i in range(10):
+            print("Intialization number: %d" % i)
+            # create the model
+            model = Sequential()
             model.add(LSTM(100, input_shape=(max_review_length, 2)))
             model.add(Dense(1, activation='sigmoid'))
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -124,15 +125,15 @@ def original_run():
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
-    intialization_scores_df.to_csv("face_2_4_6_8_intialization_scores_df.csv")
+    intialization_scores_df.to_csv("lstm_binary_bid_scores_df.csv")
 
 def permutations_run():
     permotation_scores = []
-    for i in range(100):
-        print("Permotation number: %d" % i)
-        y_train = np.random.permutation(y_train)
-        # create the model
-        with tf.device('cpu'):
+    with tf.device('gpu'):
+        for i in range(10):
+            print("Permotation number: %d" % i)
+            y_train = np.random.permutation(y_train)
+            # create the model
             model = Sequential()
             model.add(LSTM(100, input_shape=(max_review_length, 2)))
             model.add(Dense(1, activation='sigmoid'))
@@ -146,7 +147,7 @@ def permutations_run():
             print("Accuracy: %.2f%%" % (scores[1] * 100))
 
     scores_df = pd.DataFrame(permotation_scores, columns=['scores'])
-    scores_df.to_csv("permotation_scores_df.csv")
+    scores_df.to_csv("lstm_permotation_scores_df.csv")
 
 
 original_run()
