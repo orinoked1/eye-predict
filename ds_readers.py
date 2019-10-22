@@ -156,7 +156,7 @@ def data_to_fixation_map_by_sampleId(data_df, sampleId):
     return heatmap
 
 def get_fixation_dataset(data_df, screen_resolution):
-    data_df = parser.data_tidying(data_df, screen_resolution)
+    data_df = parser.data_tidying_for_dataset_building(data_df, screen_resolution)
     print('Log..... Build fixation dataset')
     fixation_dataset = []
     for sampleId in data_df.sampleId.unique():

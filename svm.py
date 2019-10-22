@@ -70,7 +70,7 @@ df.reset_index(inplace=True)
 df = df.drop_duplicates('sampleId')
 
 # Set the relevant stim
-df = df[df['stimType'] == "Face"]
+df = df[df['stimType'] == "Snack"]
 
 X = df.fixation_array
 y = df.binary_bid
@@ -91,14 +91,14 @@ for train_index, test_index in kf.split(X):
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
     # clf = tree()
-    clf = svm.SVC(kernel="rbf", gamma=0.000001)
+    clf = svm.SVC(kernel="rbf", gamma=0.00001)
     clf.fit(X_train, y_train)
     print("Train score: ", clf.score(X_train, y_train))
     print("Test score: ", clf.score(X_test, y_test))
     scores.append(clf.score(X_test, y_test))
 
 svm_scores_df = pd.DataFrame(scores, columns=['scores'])
-svm_scores_df.to_csv("fixations_svm_face_scores_df.csv")
+svm_scores_df.to_csv("fixations_svm_snack_scores_df.csv")
 
 #scores = np.asanyarray(scores)
 #print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
@@ -113,11 +113,11 @@ for i in range(1000):
     print("Permotation number: %d" % i)
     y_train = np.random.permutation(y_train)
     y_trainlist.append(y_train)
-    clf = svm.SVC(kernel="rbf", gamma=0.000001)
+    clf = svm.SVC(kernel="rbf", gamma=0.00001)
     clf.fit(X_train,y_train)
     print("Train score: ", clf.score(X_train,y_train))
     print("Test score: ", clf.score(X_test,y_test))
     scores.append(clf.score(X_test,y_test))
 
 svm_parmotation_scores_df = pd.DataFrame(scores, columns=['scores'])
-svm_parmotation_scores_df.to_csv("fixations_svm_face_parmotation_scores_df.csv")
+svm_parmotation_scores_df.to_csv("fixations_svm_snack_parmotation_scores_df.csv")
