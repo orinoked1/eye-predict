@@ -69,48 +69,51 @@ except:
     df.to_pickle("df_image_array.pkl")
 
 
+#Face stim data preperation
 df = df[df['stimType'] == "Face"]
-max_review_length = 2800
-scanpath_pad = sequence.pad_sequences(df.scanpath, maxlen=max_review_length)
-imageArray = df.img_array
-
-#apply the changes on the dataframe itself
-scanpath0 = df.scanpath.values[0]
-df["scanpath_pad"] = sequence.pad_sequences(df.scanpath, maxlen=max_review_length)
-scanpath1 = df.scanpath_pad.values[0]
-df.scanpath = df.scanpath_pad.apply(lambda x: x[::7])
-scanpath2 = df.scanpath_pad.values[0]
-
-a = scanpath_pad[20]
-b = imageArray[20]
-aa = a[::7]
-bt = b.T
-aab = np.concatenate((aa, bt), axis=1)
-#x_array = np.array(df['bid'])
-#normalized_x = preprocessing.normalize([x_array])
-#df['normalized_bid'] = normalized_x.reshape(2647, )
-df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
-X = df.scanpath
-y = df.binary_bid
-X = np.asanyarray(X)
-y = np.asanyarray(y)
+df.img_array = df.img_array.apply(lambda x: np.asanyarray(cv2.resize(x, (400, 500))))
 # truncate and pad input sequences
-max_review_length = 1500
-X = sequence.pad_sequences(X, maxlen=max_review_length)
+max_scanpath_length = 2800
+df['padded_scanpath'] = sequence.pad_sequences(df.scanpath, maxlen=max_scanpath_length, padding='post', value=0).tolist()
+df.padded_scanpath = df.padded_scanpath.apply(lambda x: x[::7])
+df.padded_scanpath = df.padded_scanpath.apply(lambda x: np.asanyarray(x))
+data_concatenate = []
+for val1, val2 in zip(df.img_array, df.padded_scanpath):
+    val1 = val1.T
+    data_concatenate.append(np.concatenate((val2, val1), axis=1))
+
+df['data_concatenate'] = data_concatenate
+
+df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
+
+
+X = np.asanyarray(df.data_concatenate.tolist())
+y = np.asanyarray(df.binary_bid.tolist())
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.10)
+X_train_shape = X_train.shape
+X_val_shape = X_val.shape
+#y_train_shape = y_train.shape
+#y_val_shape = y_val.shape
+X_train = X_train.reshape(X_train_shape[0],X_train_shape[1],X_train_shape[2], 1)
+X_val = X_val.reshape(X_val_shape[0],X_val_shape[1],X_val_shape[2], 1)
+#y_train = y_train.reshape(y_train_shape[0], 1)
+#y_val = y_val.reshape(y_val_shape[0], 1)
 
-
+zzz = X_train.shape[1:]
+print(max_scanpath_length)
 
 def original_run():
     # No permutations
     intialization_scores = []
-    for i in range(30):
+    for i in range(1):
         print("Intialization number: %d" % i)
         # create the model
         model = Sequential()
-        with tf.device('gpu'):
-            model.add(LSTM(100, input_shape=(max_review_length, 2)))
+        with tf.device('cpu'):
+            model.add(Dense(12, input_shape=X_train.shape[1:], activation='relu'))
+            model.add(Dense(8, activation='relu'))
             model.add(Dense(1, activation='sigmoid'))
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
             # print(model.summary())
