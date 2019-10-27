@@ -81,14 +81,13 @@ except:
 
     df.to_pickle("df_image_saliency_and_thresh_map.pkl")
 
-
 #Face stim data preperation
-df = df[df['stimType'] == "Face"]
-df.img_thresh_map = df.img_thresh_map.apply(lambda x: np.asanyarray(cv2.resize(x, (400, 500))))
+df = df[df['stimType'] == "Snack"]
+df.img_thresh_map = df.img_thresh_map.apply(lambda x: np.asanyarray(cv2.resize(x, (450, 580))))
 # truncate and pad input sequences
-max_scanpath_length = 2800
+max_scanpath_length = 2700
 df['padded_scanpath'] = sequence.pad_sequences(df.scanpath, maxlen=max_scanpath_length, padding='post', value=0).tolist()
-df.padded_scanpath = df.padded_scanpath.apply(lambda x: x[::7])
+df.padded_scanpath = df.padded_scanpath.apply(lambda x: x[::6])
 df.padded_scanpath = df.padded_scanpath.apply(lambda x: np.asanyarray(x))
 data_concatenate = []
 for val1, val2 in zip(df.img_thresh_map, df.padded_scanpath):
@@ -132,8 +131,8 @@ def original_run():
             score = model.evaluate(X_test, y_test, verbose=0)
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
-    intialization_scores_df = pd.DataFrame(intialization_scores, columns=['scores'])
-    intialization_scores_df.to_csv("faceStim_NN_thresh_map_scores_df.csv")
+    intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
+    intialization_scores_df.to_csv("snackStim_NN_thresh_map_scores_df.csv")
 
 def permutations_run():
     permotation_scores = []
@@ -157,7 +156,7 @@ def permutations_run():
             print("Accuracy: %.2f%%" % (scores[1] * 100))
 
     scores_df = pd.DataFrame(permotation_scores, columns=['scores'])
-    scores_df.to_csv("faceStim_permotation_NN_scores_df.csv")
+    scores_df.to_csv("snackStim_permotation_NN_scores_df.csv")
 
 
 original_run()
