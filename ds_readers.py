@@ -198,6 +198,44 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
 
     return np.asanyarray(scanpath)
 
+def vr_data_to_scanpath(data_df, sampleId, downsamplemillisec):
+    print('Log..... get scanpath data for sampleId: ', sampleId)
+    #todo - add downsampling option for the data poinnts
+    scanpath = []
+    #t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
+    x = data_df[data_df['SampleID'] == sampleId].X
+    y = data_df[data_df['SampleID'] == sampleId].Y
+    z = data_df[data_df['SampleID'] == sampleId].Z
+    if len(x) | len(y) < 2:
+        print('Scanpath data is None for sampleId: ', sampleId)
+        return None
+    #scanpath.append(t)
+    scanpath.append(x)
+    scanpath.append(y)
+    scanpath.append(z)
+
+    scanpath = np.asanyarray(scanpath).T
+
+    return np.asanyarray(scanpath)
+
+def vr_xy_only_data_to_scanpath(data_df, sampleId, downsamplemillisec):
+    print('Log..... get scanpath data for sampleId: ', sampleId)
+    #todo - add downsampling option for the data poinnts
+    scanpath = []
+    #t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
+    x = data_df[data_df['SampleID'] == sampleId].X
+    y = data_df[data_df['SampleID'] == sampleId].Y
+    if len(x) | len(y) < 2:
+        print('Scanpath data is None for sampleId: ', sampleId)
+        return None
+    #scanpath.append(t)
+    scanpath.append(x)
+    scanpath.append(y)
+
+    scanpath = np.asanyarray(scanpath).T
+
+    return np.asanyarray(scanpath)
+
 def get_scanpath_dataset(df, screen_resolution, downsamplemillisec = 4):
     try:
         path = os.getcwd()
