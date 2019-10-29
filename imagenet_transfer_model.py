@@ -93,8 +93,6 @@ except:
 
 #Face stim data preperation
 df = df[df['stimType'] == "Snack"]
-sss = df.img_color_array[0]
-print(sss.shape)
 #df.img_array = df.img_array.apply(lambda x: np.asanyarray(cv2.resize(x, (450, 580, 3))))
 # truncate and pad input sequences
 max_scanpath_length = 2700
@@ -136,13 +134,13 @@ print(images.shape)
 
 # Extract VGG16 features for the images
 with tf.device('gpu'):
-    image_input = Input((432, 576, 3))
+    image_input = Input(images.shape[1:]) #Input((432, 576, 3))
     model = VGG16(include_top=False, weights='imagenet')
     print('here1')
     features = model.predict(images)
     print('here2')
-    features = np.reshape(features, (2472, -1))  # 119808 features per image
-    labels = np.reshape(labels, (2472, -1))
+    features = np.reshape(features, (images.shape[0], -1))  #shape-2472# 119808 features per image
+    labels = np.reshape(labels, (images.shape[0], -1)) #shape-2472
 
     # Two input layers: one for the image features, one for additional labels
     feature_input = Input((119808,), name='feature_input')
