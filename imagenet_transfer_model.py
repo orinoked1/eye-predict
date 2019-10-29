@@ -128,7 +128,6 @@ target = np.asanyarray(df.binary_bid.tolist())
 
 images_shape = images.shape
 print(images.shape)
-#images = images.reshape(images_shape[0], images_shape[1], images_shape[2], 3)
 
 # Some random images, labels and target label
 #images = np.random.rand(10, 64, 64, 3)
@@ -136,30 +135,32 @@ print(images.shape)
 #target = np.random.randint(0, 1, size=(10, 1))
 
 # Extract VGG16 features for the images
-image_input = Input((432, 576, 3))
-model = VGG16(include_top=False, weights='imagenet')
-print('here1')
-features = model.predict(images)
-print('here2')
-features = np.reshape(features, (2472, -1))  # 130500 features per image
+with tf.device('gpu'):
+    image_input = Input((432, 576, 3))
+    model = VGG16(include_top=False, weights='imagenet')
+    print('here1')
+    features = model.predict(images)
+    print('here2')
+    features = np.reshape(features, (2472, -1))  # 119808 features per image
+    labels = np.reshape(labels, (2472, -1))
 
-# Two input layers: one for the image features, one for additional labels
-feature_input = Input((130500,), name='feature_input')
-label_input = Input((5400, ), name='label_input')
+    # Two input layers: one for the image features, one for additional labels
+    feature_input = Input((119808,), name='feature_input')
+    label_input = Input((5400,), name='label_input')
 
-# Concatenate the features
-concatenate_layer = Concatenate(name='concatenation')([feature_input, label_input])
-dense = Dense(16)(concatenate_layer)
-output = Dense(1, name='output_layer', activation='sigmoid')(dense)
+    # Concatenate the features
+    concatenate_layer = Concatenate(name='concatenation')([feature_input, label_input])
+    dense = Dense(16)(concatenate_layer)
+    output = Dense(1, name='output_layer', activation='sigmoid')(dense)
 
-# To define the model, pass list of input layers
-model = Model(inputs=[feature_input, label_input], outputs=output)
-print('here3')
-model.compile(optimizer='sgd', loss='binary_crossentropy')
-print('here4')
+    # To define the model, pass list of input layers
+    model = Model(inputs=[feature_input, label_input], outputs=output)
+    print('here3')
+    model.compile(optimizer='sgd', loss='binary_crossentropy')
+    print('here4')
 
-# To fit the model, pass a list of inputs arrays
-model.fit(x=[features, labels], y=target)
+    # To fit the model, pass a list of inputs arrays
+    model.fit(x=[features, labels], y=target)
 
 
 def original_run():
