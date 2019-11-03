@@ -8,6 +8,7 @@
 
 import cv2
 import numpy as np
+import re
 import matplotlib.pyplot as plt
 import ds_readers as get
 import scipy.misc
@@ -29,7 +30,7 @@ def map(FIXATION_MAP, imgToPlot_size, path, stimulus_name):
     toPlot = cv2.resize(toPlot, imgToPlot_size)
     fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
 
-    scipy.misc.imsave('imageEX/'+'fixationMapEX.jpg', fin)
+    scipy.misc.imsave('imageEX/'+stimulus_name+'_fixationMapEX.jpg', fin)
 
     return
 
@@ -75,7 +76,7 @@ def scanpath(SCANPATH, imgToPlot_size, path, stimulus_name, putNumbers = True, p
     for i in range(len(toPlot)):
         if (i % 50) == 0:
             figName = str(i) + '_scanPathEX.jpg'
-            scipy.misc.imsave('imageEX/'+figName, toPlot[i])
+            scipy.misc.imsave('imageEX/'+stimulus_name+'_'+figName, toPlot[i])
 
     return
 
@@ -98,11 +99,14 @@ def visualize(fixation_df, scanpath_df, stimType):
 
     sample_index = fixation_sample.index[0]
     scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
-    imgToPlot_size = (fixation_sample.fixationMap.values[0].shape[1], fixation_sample.fixationMap.values[0].shape[0])
+    imgToPlot_size = (fixation_sample.fixationMap.values[0].shape[0], fixation_sample.fixationMap.values[0].shape[1])
 
+    stimName = '1_' + fixation_sample.stimName.values[0]
+    stimName = re.sub('bmp$', 'jpg', stimName)
+    print('stim name: ' + stimName)
     print('Log..... building fixation map')
-    map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, fixation_sample.stimName.values[0])
+    map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, stimName)#'2_' + fixation_sample.stimName.values[0])
     print('Log... building scanpath')
-    #scanpath(scanpath_sample.scanpath, imgToPlot_size, path, scanpath_sample.stimName, False)
+    scanpath(scanpath_sample.scanpath, imgToPlot_size, path, stimName, False)#'2_' + scanpath_sample.stimName, False)
 
     return

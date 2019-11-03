@@ -13,7 +13,7 @@ Visualization lalala
 fixation_df = ds.get_fixation_df()
 scanpath_df = ds.get_scanpath_df()
 stimTypes = fixation_df.stimType.unique()
-vis.visualize(fixation_df, scanpath_df, stimTypes[2])
+vis.visualize(fixation_df, scanpath_df, stimTypes[0])
 
 """
 num_epochs = 10
