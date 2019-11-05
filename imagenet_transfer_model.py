@@ -191,7 +191,7 @@ def original_run():
             model.fit(x=[features, X_scanpath_train], y=target)
 
             # Final evaluation of the model
-            score = model.evaluate(X_test, y_test, verbose=0)
+            score = model.evaluate(x=[X_image_test, X_scanpath_test], y=y_test, verbose=0)
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
