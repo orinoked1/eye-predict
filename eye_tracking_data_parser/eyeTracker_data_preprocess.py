@@ -1,7 +1,7 @@
 """
-A try for running the code on Tomas data.
+A try for running the code on any eye-tracking data experiment.
 Also try to separate for different func so we can consider all cases.
-This is not complete and not working for Tomas code.
+This is not complete and not working.
 """
 import pandas as pd
 import codecs
