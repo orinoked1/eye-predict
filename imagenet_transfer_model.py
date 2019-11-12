@@ -108,29 +108,16 @@ df['padded_scanpath'] = sequence.pad_sequences(df.scanpath, maxlen=max_scanpath_
 
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
 
-#X = np.asanyarray(df.data_concatenate.tolist())
-#y = np.asanyarray(df.binary_bid.tolist())
+images = np.asanyarray(df.img_color_array.tolist())
+labels = np.asanyarray(df.padded_scanpath.tolist())
+target = np.asanyarray(df.binary_bid.tolist())
 
-#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
-#X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.10)
 #X_train_shape = X_train.shape
 #X_val_shape = X_val.shape
 #X_test_shape = X_test.shape
 #X_train = X_train.reshape(X_train_shape[0], X_train_shape[1], X_train_shape[2], 1)
 #X_val = X_val.reshape(X_val_shape[0], X_val_shape[1], X_val_shape[2], 1)
 #X_test = X_test.reshape(X_test_shape[0], X_test_shape[1], X_test_shape[2], 1)
-
-images = np.asanyarray(df.img_color_array.tolist())
-labels = np.asanyarray(df.padded_scanpath.tolist())
-target = np.asanyarray(df.binary_bid.tolist())
-
-images_shape = images.shape
-print(images.shape)
-
-# Some random images, labels and target label
-#images = np.random.rand(10, 64, 64, 3)
-#labels = np.random.randint(0, 1, size=(10, 4))
-#target = np.random.randint(0, 1, size=(10, 1))
 
 # Extract VGG16 features for the images
 with tf.device('gpu'):
@@ -160,24 +147,51 @@ with tf.device('gpu'):
     # To fit the model, pass a list of inputs arrays
     model.fit(x=[features, labels], y=target)
 
+x_image = np.asanyarray(df.img_color_array.tolist())
+x_scanpath = np.asanyarray(df.padded_scanpath.tolist())
+y = np.asanyarray(df.binary_bid.tolist())
+
+train_pct_index = int(0.9 * len(x_image))
+X_image_train, X_image_test = x_image[:train_pct_index], x_image[train_pct_index:]
+X_scanpath_train, X_scanpath_test = x_scanpath[:train_pct_index], x_scanpath[train_pct_index:]
+y_train, y_test = y[:train_pct_index], y[train_pct_index:]
+
+############# add shuffel!!!
 
 def original_run():
     # No permutations
     intialization_scores = []
-    for i in range(30):
+    for i in range(1):
         print("Intialization number: %d" % i)
-        # create the model
-        model = Sequential()
-        with tf.device('cpu'):
-            model.add(Dense(12, input_shape=X_train.shape[1:], activation='relu'))
-            model.add(Dense(8, activation='relu'))
-            model.add(Flatten())
-            model.add(Dense(1, activation='sigmoid'))
-            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-            # print(model.summary())
-            history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=1, batch_size=32, shuffle=False)
+        with tf.device('gpu'):
+            image_input = Input(X_image_train.shape[1:])  # Input((432, 576, 3))
+            model = VGG16(include_top=False, weights='imagenet')
+            print('here1')
+            features = model.predict(X_image_train)
+            print('here2')
+            features = np.reshape(features, (X_image_train.shape[0], -1))  # shape-2472# 119808 features per image
+            x_scanpath = np.reshape(X_scanpath_train, (X_scanpath_train.shape[0], -1))  # shape-2472
+
+            # Two input layers: one for the image features, one for additional labels
+            feature_input = Input((119808,), name='feature_input')
+            x_scanpath_input = Input((5400,), name='x_scanpath_input')
+
+            # Concatenate the features
+            concatenate_layer = Concatenate(name='concatenation')([feature_input, x_scanpath_input])
+            dense = Dense(16)(concatenate_layer)
+            output = Dense(1, name='output_layer', activation='sigmoid')(dense)
+
+            # To define the model, pass list of input layers
+            model = Model(inputs=[feature_input, x_scanpath_input], outputs=output)
+            print('here3')
+            model.compile(optimizer='sgd', loss='binary_crossentropy')
+            print('here4')
+
+            # To fit the model, pass a list of inputs arrays
+            model.fit(x=[features, X_scanpath_train], y=target)
+
             # Final evaluation of the model
-            score = model.evaluate(X_test, y_test, verbose=0)
+            score = model.evaluate(x=[X_image_test, X_scanpath_test], y=y_test, verbose=0)
             intialization_scores.append(score[1] * 100)
             print("Accuracy: %.2f%%" % (score[1] * 100))
     intialization_scores_df = pd.DataFrame(intialization_scores, columns = ['scores'])
