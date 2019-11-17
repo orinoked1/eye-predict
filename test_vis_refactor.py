@@ -3,10 +3,25 @@ import sys
 sys.path.append('../')
 import ds_readers as ds
 from eye_tracking_data_parser import raw_data_preprocess as parser
-import os
 import pandas as pd
 import pickle
+from modules.data.preprocessing import DataPreprocess
+from modules.data.stim import Stim
+import os
+import yaml
 
+
+path = os.getcwd()
+expconfig = "/modules/config/experimentconfig.yaml"
+with open(path + expconfig, 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
+stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
+data = DataPreprocess(cfg['exp']['etp']['asc_files_path'], cfg['exp']['etp']['txt_files_path'], cfg['exp']['etp']['trial_start_str'],
+                             cfg['exp']['etp']['trial_end_str'], cfg['exp']['etp']['output_file'], [stimSnack, stimFace])
+
+raw_data = data.read_eyeTracking_data()
 
 def get_raw_data():
 

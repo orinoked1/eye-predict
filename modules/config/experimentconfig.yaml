@@ -1,0 +1,49 @@
+
+exp:
+  etp:
+    name: etp
+    path1: /etp_data/Output
+    trial_start_str: TrialStart
+    trial_end_str: ScaleStart
+    output_file: temp.csv
+    stimSnack:
+      name: Snack
+      id: 2
+      size: (690,520)
+    stimFace:
+      name: Face
+      id: 1
+      size: (480,600)
+    screen_resolution: (1080,1920)
+
+  test:
+    name: my_data_test
+    path1: /my_data_test
+    trial_start_str: TrialStart
+    trial_end_str: ScaleStart
+    output_file: my_data_test.csv
+    stimSnack:
+      name: Snack
+      id: 2
+      size: (690,520)
+    stimFace:
+      name: Face
+      id: 1
+      size: (480,600)
+    screen_resolution: (1080,1920)
+
+  bdm:
+    name: bdm_scale
+    path1: /raw_data/scale_ranking_bmm_short_data/output
+    path2: /raw_data/bdm_bmm_short_data/output
+    trial_start_str: TrialStart
+    trial_end_str: ScaleStart
+    stimSnack:
+      name: Snack
+      id: 2
+      size: (690,520)
+    stimFace:
+      name: Face
+      id: 1
+      size: (480,600)
+    screen_resolution: (1080,1920)
