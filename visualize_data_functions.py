@@ -56,16 +56,16 @@ def scanpath(SCANPATH, imgToPlot_size, path, stimulus_name, putNumbers = True, p
         frame = np.copy(toPlot[-1]).astype(np.uint8)
 
         cv2.circle(frame,
-                   (fixation[1], fixation[2]),
+                   (fixation[0], fixation[1]),
                    5, (0, 0, 0), 1)
         if putNumbers:
             cv2.putText(frame, str(i+1),
-                        (fixation[1], fixation[2]),
+                        (fixation[0], fixation[1]),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         1, (0,0,255), thickness=2)
         if putLines and i>0:
             prec_fixation = scanpath[i-1].astype(int)
-            cv2.line(frame, (prec_fixation[1], prec_fixation[2]), (fixation[1], fixation[2]), (0, 0, 255), thickness = 1, lineType = 8, shift = 0)
+            cv2.line(frame, (prec_fixation[0], prec_fixation[1]), (fixation[0], fixation[1]), (0, 0, 255), thickness = 1, lineType = 8, shift = 0)
 
         # if animation is required, frames are attached in a sequence
         # if not animation is required, older frames are removed
@@ -87,6 +87,7 @@ def visualize(fixation_df, scanpath_df, stimType):
     fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stimType]
     scanpath_specific_stim_df = scanpath_df[scanpath_df['stimType'] == stimType]
 
+    np.random.seed(400)
     fixation_sample = fixation_specific_stim_df.sample(n=1)
 
     sample = fixation_sample['sampleId'].values[0]
@@ -99,14 +100,11 @@ def visualize(fixation_df, scanpath_df, stimType):
 
     sample_index = fixation_sample.index[0]
     scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
-    imgToPlot_size = (fixation_sample.fixationMap.values[0].shape[0], fixation_sample.fixationMap.values[0].shape[1])
+    imgToPlot_size = (fixation_sample.fixationMap.values[0].shape[1], fixation_sample.fixationMap.values[0].shape[0])
 
-    stimName = '1_' + fixation_sample.stimName.values[0]
-    stimName = re.sub('bmp$', 'jpg', stimName)
-    print('stim name: ' + stimName)
     print('Log..... building fixation map')
-    map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, stimName)#'2_' + fixation_sample.stimName.values[0])
+    map(fixation_sample.fixationMap.values[0], imgToPlot_size, path, fixation_sample.stimName.values[0])
     print('Log... building scanpath')
-    scanpath(scanpath_sample.scanpath, imgToPlot_size, path, stimName, False)#'2_' + scanpath_sample.stimName, False)
+    scanpath(scanpath_sample.scanpath, (690, 520), path, scanpath_sample.stimName, False)
 
     return

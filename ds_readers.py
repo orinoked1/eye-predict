@@ -142,12 +142,12 @@ def stimulus(DATASET_NAME, STIMULUS_NAME):
 
 def data_to_fixation_map_by_sampleId(data_df, sampleId):
     print('Log..... get fixation map for sampleId: ', sampleId)
-    x = data_df[data_df['sampleId'] == sampleId].X_axis
-    y = data_df[data_df['sampleId'] == sampleId].Y_axis
+    x = data_df[data_df['sampleId'] == sampleId].R_X_axis
+    y = data_df[data_df['sampleId'] == sampleId].R_Y_axis
     if len(x) | len(y) < 5:
         print('Fixation data is None for sampleId: ', sampleId)
         return None
-    xedges = np.arange(690) #576 TODO add the max image size as const
+    xedges = np.arange(480) #576 TODO add the max image size as const
     yedges = np.arange(600) #432
 
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
@@ -185,8 +185,8 @@ def data_to_scanpath(data_df, sampleId, downsamplemillisec):
     #todo - add downsampling option for the data poinnts
     scanpath = []
     #t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
-    x = data_df[data_df['sampleId'] == sampleId].avg_X_axis.astype(int)
-    y = data_df[data_df['sampleId'] == sampleId].avg_Y_axis.astype(int)
+    x = data_df[data_df['sampleId'] == sampleId].R_X_axis.astype(int)
+    y = data_df[data_df['sampleId'] == sampleId].R_Y_axis.astype(int)
     if len(x) | len(y) < 2:
         print('Scanpath data is None for sampleId: ', sampleId)
         return None
@@ -237,12 +237,12 @@ def vr_xy_only_data_to_scanpath(data_df, sampleId, downsamplemillisec):
     return np.asanyarray(scanpath)
 
 def get_scanpath_dataset(df, screen_resolution, downsamplemillisec = 4):
-    try:
-        path = os.getcwd()
-        data_df = pd.read_pickle(path + "/data_df.pkl")
-    except:
-        data_df = parser.data_tidying_for_dataset_building(df, screen_resolution)
-        data_df.to_pickle("data_df.pkl")
+    #try:
+    #    path = os.getcwd()
+    #    data_df = pd.read_pickle(path + "/data_df.pkl")
+    #except:
+    data_df = parser.data_tidying_for_dataset_building(df, screen_resolution)
+    #data_df.to_pickle("data_df.pkl")
 
     print('Log..... Build scanpath dataset')
     scanpath_dataset = []
