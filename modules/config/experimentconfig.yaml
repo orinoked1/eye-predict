@@ -2,48 +2,63 @@
 exp:
   etp:
     name: etp
-    path1: /etp_data/Output
+    both_eye_path: /etp_data/output_both_eye
+    one_eye_path1: /etp_data/output_one_eye
+    stim_path: /etp_data/Stim0
+    visualization_path: /etp_data/visualized_data
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
-    output_file: temp.csv
+    output_file_both_eye: /etp_data/processed/both_eye_data.csv
+    output_file_one_eye1: /etp_data/processed/one_eye_data.csv
     stimSnack:
       name: Snack
       id: 2
-      size: (690,520)
+      size: 690,520
     stimFace:
       name: Face
       id: 1
-      size: (480,600)
-    screen_resolution: (1080,1920)
+      size: 480,600
+    screen_resolution: 1080,1920
 
   test:
     name: my_data_test
-    path1: /my_data_test
+    both_eye_path: /my_data_test/output_both_eye
+    one_eye_path1: /my_data_test/output_one_eye
+    stim_path: /etp_data/Stim0
+    visualization_path: /etp_data/visualized_data
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
-    output_file: my_data_test.csv
+    output_file_both_eye: /my_data_test/both_eye_data.csv
+    output_file_one_eye1: /my_data_test/one_eye_data.csv
     stimSnack:
       name: Snack
       id: 2
-      size: (690,520)
+      size: 690,520
     stimFace:
       name: Face
       id: 1
-      size: (480,600)
-    screen_resolution: (1080,1920)
+      size: 480,600
+    screen_resolution: 1080,1920
 
+###### Only one eye data is recorded path1 and path2 should be adjusted ######
   bdm:
     name: bdm_scale
-    path1: /raw_data/scale_ranking_bmm_short_data/output
-    path2: /raw_data/bdm_bmm_short_data/output
+    both_eye_path:
+    one_eye_path1: /raw_data/scale_ranking_bmm_short_data/output
+    one_eye_path2: /raw_data/bdm_bmm_short_data/output
+    stim_path: /etp_data/Stim0
+    visualization_path: /etp_data/visualized_data
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
+    output_file_both_eye:
+    output_file_one_eye1: /raw_data/processed/both_eye_data.csv
+    output_file_one_eye2: /raw_data/processed/one_eye_data.csv
     stimSnack:
       name: Snack
       id: 2
-      size: (690,520)
+      size: 690,520
     stimFace:
       name: Face
       id: 1
-      size: (480,600)
-    screen_resolution: (1080,1920)
+      size: 480,600
+    screen_resolution: 1080,1920

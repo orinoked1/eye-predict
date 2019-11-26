@@ -2,10 +2,11 @@ import visualize_data_functions as vis
 import sys
 sys.path.append('../')
 import ds_readers as ds
-from eye_tracking_data_parser import raw_data_preprocess as parser
 import pandas as pd
 import pickle
 from modules.data.preprocessing import DataPreprocess
+from modules.data.datasets import DatasetBuilder
+from modules.data.visualization import DataVis
 from modules.data.stim import Stim
 import os
 import yaml
@@ -16,30 +17,26 @@ expconfig = "/modules/config/experimentconfig.yaml"
 with open(path + expconfig, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
-stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
-stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
-data = DataPreprocess(cfg['exp']['etp']['asc_files_path'], cfg['exp']['etp']['txt_files_path'], cfg['exp']['etp']['trial_start_str'],
-                             cfg['exp']['etp']['trial_end_str'], cfg['exp']['etp']['output_file'], [stimSnack, stimFace])
+stimSnack = Stim(cfg['exp']['test']['stimSnack']['name'], cfg['exp']['test']['stimSnack']['id'], cfg['exp']['test']['stimSnack']['size'])
+stimFace = Stim(cfg['exp']['test']['stimFace']['name'], cfg['exp']['test']['stimFace']['id'], cfg['exp']['test']['stimFace']['size'])
+data = DataPreprocess(cfg['exp']['test']['both_eye_path'], cfg['exp']['test']['one_eye_path1'], cfg['exp']['test']['trial_start_str'],
+                      cfg['exp']['test']['trial_end_str'], cfg['exp']['test']['output_file_both_eye'], cfg['exp']['test']['output_file_one_eye1'], [stimSnack, stimFace])
 
-raw_data = data.read_eyeTracking_data()
+both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded()
+one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded()
+both_eye_data = pd.read_csv(both_eye_data_path)
+one_eye_data = pd.read_csv(one_eye_data_path)
+all_data = pd.concat([both_eye_data, one_eye_data])
+tidy_data = data.data_tidying_for_dataset_building(all_data, cfg['exp']['test']['screen_resolution'])
 
-def get_raw_data():
+datasetbuilder = DatasetBuilder([stimSnack, stimFace])
+fixation_df = datasetbuilder.get_fixation_dataset(tidy_data)
+scanpath_df = datasetbuilder.get_scanpath_dataset(tidy_data)
 
-    #read 'scale_ranking_bmm_short_data' row data into csv
-    #TODO: read info from config file
-    path = os.getcwd()
-    asc_files_path = path +'/my_data_test'
-    txt_files_path = path +'/my_data_test'
-    trial_satart_str = 'TrialStart'
-    trial_end_str = 'ScaleStart'
-    csv_file_name = "my_data_test_processed_data.csv"
+datavis = DataVis(cfg['exp']['test']['stim_path'], cfg['exp']['test']['visualization_path'], [stimSnack, stimFace], 0)
 
+datavis.visualize(fixation_df, scanpath_df)
 
-    data_csv_path = parser.raw_data_to_csv(asc_files_path, txt_files_path, trial_satart_str, trial_end_str, csv_file_name)
-
-    return data_csv_path
-
-#path = get_raw_data()
 path = os.getcwd()
 
 data_df = pd.read_csv(path + '/my_data_test_processed_data.csv')
