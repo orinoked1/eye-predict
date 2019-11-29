@@ -2,27 +2,27 @@ import pandas as pd
 import codecs
 import os
 import glob
-import yaml
 
 class DataPreprocess(object):
 
-    def __init__(self, asc_files_path, txt_files_path, trial_start_str, trial_end_str, output_file, stim):
-        self.asc_files_path = asc_files_path
-        self.txt_files_path = txt_files_path
+    def __init__(self, both_eye_data_path, one_eye_data_path, trial_start_str, trial_end_str, output_file_both_eye, output_file_one_eye, stimarray):
+        self.both_eye_data_path = both_eye_data_path
+        self.one_eye_data_path = one_eye_data_path
         self.trial_start_str = trial_start_str
         self.trial_end_str = trial_end_str
-        self.output_file = output_file
-        self.stim = stim
+        self.output_file_both_eye = output_file_both_eye
+        self.output_file_one_eye = output_file_one_eye
+        self.stimarray = stimarray
 
-    def read_eyeTracking_data(self):
+    def read_eyeTracking_data_both_eye_recorded(self):
         flag = 0
         path = os.getcwd()
         # Set directory name that contains output directory with asc and txt files
-        asc_directory = self.asc_files_path
-        txt_directory = self.txt_files_path
+        asc_directory = self.both_eye_data_path
+        txt_directory = self.both_eye_data_path
         excluded_participents = pd.read_table(path + txt_directory + '//' + 'excluded_participents.txt')
         # Set string represents trail start data records
-        indexStartStr = self.trial_satart_str  # 'TrialStart'
+        indexStartStr = self.trial_start_str  # 'TrialStart'
         # Set string represents trail ends data records
         indexEndStr = self.trial_end_str  # 'ScaleStart'
         # Run over each Ascii file and open it
@@ -66,17 +66,17 @@ class DataPreprocess(object):
                 allTrialsData = pd.concat([allTrialsData, mergeData])
                 print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
 
-            # get only dominant eye data
+            # get onlydominant eye data
             txtFilePersonalDataName = os.path.basename(
                 glob.glob(path + txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
             txtpersonalData = pd.read_table(path + txt_directory + '//' + txtFilePersonalDataName)
             dominant_eye = txtpersonalData['dominant eye (1-right, 2-left)'].values[0]
             if dominant_eye == 1:
-                # allTrialsData = allTrialsData.drop([1, 2, 3], axis=1)
-                # allTrialsData.rename(columns={4: 1, 5: 2, 6: 3}, inplace=True)
+                allTrialsData = allTrialsData.drop([1, 2, 3], axis=1)
+                allTrialsData.rename(columns={4: 1, 5: 2, 6: 3}, inplace=True)
                 allTrialsData['dominant_eye'] = 'R'
             else:
-                # allTrialsData = allTrialsData.drop([4, 5, 6], axis=1)
+                allTrialsData = allTrialsData.drop([4, 5, 6], axis=1)
                 allTrialsData['dominant_eye'] = 'L'
 
             # Appending all data to one DataFrame
@@ -87,12 +87,89 @@ class DataPreprocess(object):
 
         # Rename columns if needed
         allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
-                                   'timeStamp', 'L_X_axis', 'L_Y_axis', 'L_pupil_size', 'R_X_axis', 'R_Y_axis',
-                                   'R_pupil_size', 'dominant_eye']
+                                   'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
 
         # Store all subjects data DF as CSV
-        allSubjectsData.to_csv(self.output_file)  # 'scale_ranking_bmm_short_data_df.csv'
-        data_csv_path = path + self.output_file
+        allSubjectsData.to_csv(path + self.output_file_both_eye)
+        data_csv_path = path + self.output_file_both_eye
+        # returns path for data csv file
+        return data_csv_path
+
+    def read_eyeTracking_data_one_eye_recorded(self):
+        flag = 0
+        path = os.getcwd()
+        # Set directory name that contains output directory with asc and txt files
+        asc_directory = self.one_eye_data_path
+        txt_directory = self.one_eye_data_path
+        excluded_participents = pd.read_table(path + txt_directory + '//' + 'excluded_participents.txt')
+        # Set string represents trail start data records
+        indexStartStr = self.trial_start_str  # 'TrialStart'
+        # Set string represents trail ends data records
+        indexEndStr = self.trial_end_str  # 'ScaleStart'
+        # Run over each Ascii file and open it
+        for ascFile in glob.glob(path + asc_directory + '//*asc'):
+            ascFileName = os.path.basename(ascFile)
+            tempList = ascFileName.split('_')
+            subjectIntId = tempList[0]
+            id = int(subjectIntId)
+            if id in excluded_participents.exclude.values:
+                print('Excluded subjectId - ' + subjectIntId)
+                continue
+            print('Log.....Getting Ascii file data - ' + ascFileName)
+            ascFile = codecs.open(path + asc_directory + '//' + ascFileName, encoding='utf-8-sig')
+            ascData = ascFile.readlines()
+            # Split data to columns and get only relevnt ones
+            ascDf = pd.DataFrame(ascData, columns=['data'])
+            ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
+            ascDf = ascDf[[0, 1, 2, 3]]
+            print('Log.....Getting txt file data for subject id - ' + subjectIntId)
+            # Read txt file of subject same subject as asc file
+            txtFileName = os.path.basename(glob.glob(path + txt_directory + '//*' + subjectIntId + '_Scale' + '*txt')[0])
+            txtData = pd.read_table(path + txt_directory + '//' + txtFileName)
+            # Get number of trials and subject ID
+            trialCount = txtData.count()[0]
+            # subjectId = txtData['subjectID'][0]
+            print('Log.....Runing over all trials of subject id - ' + subjectIntId)
+            # Run over all trials per user and merge the asc data with the txt data
+            for trial in range(5):
+                trial_str = 'Trial' + str(trial + 1).zfill(3)
+                indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
+                                   ascDf[1].str.contains(trial_str, na=False)].index[0] + 1
+                indexEnd = ascDf[ascDf[1].str.contains(indexEndStr, na=False) &
+                                 ascDf[1].str.contains(trial_str, na=False)].index[0] - 1
+                # Get the data, starting from 'TrialStart' to subjects 'Response'
+                trialData = ascDf.loc[indexStart:indexEnd]
+                # trialData['subjectID'] = subjectIntId
+                trialData['trial'] = trial + 1
+                mergeData = pd.merge(txtData, trialData, on='trial')
+                if (trial + 1 == 1):
+                    allTrialsData = pd.DataFrame(columns=mergeData.columns)
+                allTrialsData = pd.concat([allTrialsData, mergeData])
+                print('Log.....' + 'Trial' + str(trial + 1).zfill(3))
+
+            # add dominant eye field
+            txtFilePersonalDataName = os.path.basename(
+                glob.glob(path + txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
+            txtpersonalData = pd.read_table(path + txt_directory + '//' + txtFilePersonalDataName)
+            dominant_eye = txtpersonalData['dominant eye (1-right, 2-left)'].values[0]
+            if dominant_eye == 1:
+                allTrialsData['dominant_eye'] = 'R'
+            else:
+                allTrialsData['dominant_eye'] = 'L'
+
+            # Appending all data to one DataFrame
+            if flag == 0:
+                allSubjectsData = pd.DataFrame(columns=allTrialsData.columns)
+                flag = 1
+            allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
+
+        # Rename columns if needed
+        allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+                                   'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
+
+        # Store all subjects data DF as CSV
+        allSubjectsData.to_csv(path + self.output_file_one_eye)
+        data_csv_path = path + self.output_file_one_eye
         # returns path for data csv file
         return data_csv_path
 
@@ -106,46 +183,45 @@ class DataPreprocess(object):
 
     def data_tidying_for_dataset_building(self, df, screen_resolution):
         print('Log..... Data tidying')
-
+        screen_resolution = [int(x) for x in screen_resolution.split(',')]
         # add 'sampleId' field for each uniqe sample
         df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
-        if 'L_X_axis' in df:
-            df.drop(['L_X_axis', 'L_Y_axis', 'L_pupil_size'], inplace=True, axis=1)
+
         # Change X, Y and timeStamp data from String to Numeric changing strings " . ", "EBLINK", FIX", "SACC" to nan
-        df.R_X_axis = pd.to_numeric(df.R_X_axis, errors='coerce')
-        df.R_Y_axis = pd.to_numeric(df.R_Y_axis, errors='coerce')
+        df.X_axis = pd.to_numeric(df.X_axis, errors='coerce')
+        df.Y_axis = pd.to_numeric(df.Y_axis, errors='coerce')
         df.timeStamp = pd.to_numeric(df.timeStamp, errors='coerce')
-        df.R_X_axis = df.R_X_axis.round()
-        df.R_Y_axis = df.R_Y_axis.round()
+        df.X_axis = df.X_axis.round()
+        df.Y_axis = df.Y_axis.round()
         # Remove Nan
         df.dropna(inplace=True)
-        df.R_X_axis = df.R_X_axis.astype(int)
-        df.R_Y_axis = df.R_Y_axis.astype(int)
+        df.X_axis = df.X_axis.astype(int)
+        df.Y_axis = df.Y_axis.astype(int)
         df.timeStamp = df.timeStamp.astype(int)
         df = df[df.bid != 999]
         df.reset_index(drop=True, inplace=True)
 
         # stim is snack
-        stim_id = 2
-        stim_resolution = ([690, 520])
+        stim_id = int(self.stimarray[0].id)
+        stim_resolution = self.stimarray[0].size
         min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
         # get only datapoints within stim boundaries
-        stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['R_X_axis'] >= min_x) & (df['R_X_axis'] <= max_x) &
-                                (df['R_Y_axis'] >= min_y) & (df['R_Y_axis'] <= max_y)) == True]
+        stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
+                                (df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
         # Shifting x,y datapoint to start from (0,0) point
-        stimARegionDataDf.R_X_axis = stimARegionDataDf.R_X_axis - min_x
-        stimARegionDataDf.R_Y_axis = stimARegionDataDf.R_Y_axis - min_y
+        stimARegionDataDf.X_axis = stimARegionDataDf.X_axis - min_x
+        stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
 
         # stim face
-        stim_resolution = ([480, 600])
+        stim_resolution = self.stimarray[1].size
         min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
         # get only datapoints within stim boundaries
-        stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['R_X_axis'] >= min_x) & (df['R_X_axis'] <= max_x) & (
-                df['R_Y_axis'] >= min_y) & (df['R_Y_axis'] <= max_y)) == True]
+        stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) & (
+                df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
 
         # Shifting x,y datapoint to start from (0,0) point
-        stimBRegionDataDf.R_X_axis = stimBRegionDataDf.R_X_axis - min_x
-        stimBRegionDataDf.R_Y_axis = stimBRegionDataDf.R_Y_axis - min_y
+        stimBRegionDataDf.X_axis = stimBRegionDataDf.X_axis - min_x
+        stimBRegionDataDf.Y_axis = stimBRegionDataDf.Y_axis - min_y
 
         byImgRegionDataDf = pd.concat([stimARegionDataDf, stimBRegionDataDf])
         byImgRegionDataDf.reset_index(drop=True, inplace=True)
