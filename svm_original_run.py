@@ -13,7 +13,7 @@ np.random.seed(31415)
 path = os.getcwd()
 
 try:
-    df = pd.read_pickle("etp_scanpath_df.pkl")
+    df = pd.read_pickle("processed_data/etp_scanpath_df.pkl")
 except:
     raw_data_df_101_117 = pd.read_csv(path + '/output_data_both_eyes_101_117.csv')
     raw_data_df_118_125 = pd.read_csv(path + '/output_data_both_eyes_118_125.csv')
@@ -26,7 +26,7 @@ except:
 
 
 try:
-    df = pd.read_pickle("df.pkl")
+    df = pd.read_pickle("processed_data/df.pkl")
 except:
     df['scanpath_len'] = 0
     for i in range(df.scanpath.size):
@@ -38,7 +38,7 @@ except:
 df = df[df.scanpath_len > 2300]  # > 75%
 df = df.reset_index()
 # Set the relevant stim
-df = df[df['stimType'] == "Face"]
+df = df[df['stimType'] == "Snack"]
 
 df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
 
@@ -67,6 +67,7 @@ for train_index, test_index in kf.split(X):
     print("Test score: ", clf.score(X_test, y_test))
     scores.append(clf.score(X_test, y_test))
 
+print("ACC: ", (sum(scores) / len(scores))*100)
 svm_scores_df = pd.DataFrame(scores, columns=['scores'])
 svm_scores_df.to_csv("svm_faces_scores_df.csv")
 
