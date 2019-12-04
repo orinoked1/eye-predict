@@ -2,14 +2,14 @@
 exp:
   etp:
     name: etp
-    both_eye_path: /etp_data/output_both_eye
+    both_eye_path: /etp_data/output_both_eye_126_138
     one_eye_path1: /etp_data/output_one_eye
     stim_path: /etp_data/Stim0
     visualization_path: /etp_data/visualized_data
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
-    output_file_both_eye: /etp_data/processed/both_eye_data.csv
-    output_file_one_eye1: /etp_data/processed/one_eye_data.csv
+    output_file_both_eye: /etp_data/processed/126_138_both_eye_data.csv
+    output_file_one_eye1: /etp_data/processed/126_138_one_eye_data.csv
     stimSnack:
       name: Snack
       id: 2

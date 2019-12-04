@@ -131,7 +131,7 @@ class DataPreprocess(object):
             # subjectId = txtData['subjectID'][0]
             print('Log.....Runing over all trials of subject id - ' + subjectIntId)
             # Run over all trials per user and merge the asc data with the txt data
-            for trial in range(5):
+            for trial in range(trialCount):
                 trial_str = 'Trial' + str(trial + 1).zfill(3)
                 indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
                                    ascDf[1].str.contains(trial_str, na=False)].index[0] + 1

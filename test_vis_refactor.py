@@ -17,22 +17,33 @@ expconfig = "/modules/config/experimentconfig.yaml"
 with open(path + expconfig, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
-stimSnack = Stim(cfg['exp']['test']['stimSnack']['name'], cfg['exp']['test']['stimSnack']['id'], cfg['exp']['test']['stimSnack']['size'])
-stimFace = Stim(cfg['exp']['test']['stimFace']['name'], cfg['exp']['test']['stimFace']['id'], cfg['exp']['test']['stimFace']['size'])
-data = DataPreprocess(cfg['exp']['test']['both_eye_path'], cfg['exp']['test']['one_eye_path1'], cfg['exp']['test']['trial_start_str'],
-                      cfg['exp']['test']['trial_end_str'], cfg['exp']['test']['output_file_both_eye'], cfg['exp']['test']['output_file_one_eye1'], [stimSnack, stimFace])
+stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
+stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
+data = DataPreprocess(cfg['exp']['etp']['both_eye_path'],
+                      cfg['exp']['etp']['one_eye_path1'],
+                      cfg['exp']['etp']['trial_start_str'],
+                      cfg['exp']['etp']['trial_end_str'],
+                      cfg['exp']['etp']['output_file_both_eye'],
+                      cfg['exp']['etp']['output_file_one_eye1'], [stimSnack, stimFace])
 
-both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded()
-one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded()
-both_eye_data = pd.read_csv(both_eye_data_path)
-one_eye_data = pd.read_csv(one_eye_data_path)
-all_data = pd.concat([both_eye_data, one_eye_data])
-tidy_data = data.data_tidying_for_dataset_building(all_data, cfg['exp']['test']['screen_resolution'])
+#both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded()
+#one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded()
+try:
+    tidy_data = pd.read_pickle(path + "/etp_data/processed/tidy_data_126_128.pkl")
+except:
+    both_eye_data = pd.read_csv(path + "/etp_data/processed/126_138_both_eye_data.csv") #(both_eye_data_path)
+    one_eye_data = pd.read_csv(path + "/etp_data/processed/126_138_one_eye_data.csv") #(one_eye_data_path)
+    all_data = pd.concat([both_eye_data, one_eye_data])
+    tidy_data = data.data_tidying_for_dataset_building(all_data, cfg['exp']['test']['screen_resolution'])
+    tidy_data.to_pickle(path + "/etp_data/processed/tidy_data_126_128.pkl")
 
 datasetbuilder = DatasetBuilder([stimSnack, stimFace])
 fixation_df = datasetbuilder.get_fixation_dataset(tidy_data)
 scanpath_df = datasetbuilder.get_scanpath_dataset(tidy_data)
+fixation_df.to_pickle(path + "/etp_data/processed/fixation_df_126_128.pkl")
+scanpath_df.to_pickle(path + "/etp_data/processed/scanpath_df_126_128.pkl")
 
+"""
 datavis = DataVis(cfg['exp']['test']['stim_path'], cfg['exp']['test']['visualization_path'], [stimSnack, stimFace], 0)
 
 datavis.visualize(fixation_df, scanpath_df)
@@ -65,3 +76,4 @@ scanpath_df.columns = ['subject_id', 'stimName', 'stimType', 'sampleId', 'scanpa
 
 stimTypes = fixation_df.stimType.unique()
 vis.visualize(fixation_df, scanpath_df, stimTypes[0])
+"""

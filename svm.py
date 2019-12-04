@@ -14,7 +14,7 @@ path = os.getcwd()
 
 try:
     #dfexample = pd.read_pickle("etp_scanpath_df.pkl")
-    df = pd.read_csv("fixation_dataFrame.csv")
+    df = pd.read_csv("processed_data/fixation_dataFrame.csv")
 except:
     raw_data_df_101_117 = pd.read_csv(path + '/output_data_both_eyes_101_117.csv')
     raw_data_df_118_125 = pd.read_csv(path + '/output_data_both_eyes_118_125.csv')
@@ -40,7 +40,7 @@ df = df[df.scanpath_len > 2300]  # > 75%
 df = df.reset_index()
 """
 try:
-    df = pd.read_pickle("fixation_array_dataset.pkl")
+    df = pd.read_pickle("processed_data/fixation_array_dataset.pkl")
 except:
     #get only right eye data
     df = df[df['eye'] == 'R']
@@ -97,6 +97,7 @@ for train_index, test_index in kf.split(X):
     print("Test score: ", clf.score(X_test, y_test))
     scores.append(clf.score(X_test, y_test))
 
+print("ACC: ", (sum(scores) / len(scores))*100)
 svm_scores_df = pd.DataFrame(scores, columns=['scores'])
 svm_scores_df.to_csv("fixations_svm_snack_scores_df.csv")
 
