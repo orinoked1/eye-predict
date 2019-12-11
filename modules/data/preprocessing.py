@@ -14,7 +14,7 @@ class DataPreprocess(object):
         self.output_file_one_eye = output_file_one_eye
         self.stimarray = stimarray
 
-    def read_eyeTracking_data_both_eye_recorded(self):
+    def read_eyeTracking_data_both_eye_recorded(self, fixation_only):
         flag = 0
         path = os.getcwd()
         # Set directory name that contains output directory with asc and txt files
@@ -71,13 +71,20 @@ class DataPreprocess(object):
                 glob.glob(path + txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
             txtpersonalData = pd.read_table(path + txt_directory + '//' + txtFilePersonalDataName)
             dominant_eye = txtpersonalData['dominant eye (1-right, 2-left)'].values[0]
-            if dominant_eye == 1:
-                allTrialsData = allTrialsData.drop([1, 2, 3], axis=1)
-                allTrialsData.rename(columns={4: 1, 5: 2, 6: 3}, inplace=True)
-                allTrialsData['dominant_eye'] = 'R'
+            if fixation_only:
+                allTrialsData = allTrialsData.drop([6], axis=1)
+                if dominant_eye == 1:
+                    allTrialsData['dominant_eye'] = 'R'
+                else:
+                    allTrialsData['dominant_eye'] = 'L'
             else:
-                allTrialsData = allTrialsData.drop([4, 5, 6], axis=1)
-                allTrialsData['dominant_eye'] = 'L'
+                if dominant_eye == 1:
+                    allTrialsData = allTrialsData.drop([1, 2, 3], axis=1)
+                    allTrialsData.rename(columns={4: 1, 5: 2, 6: 3}, inplace=True)
+                    allTrialsData['dominant_eye'] = 'R'
+                else:
+                    allTrialsData = allTrialsData.drop([4, 5, 6], axis=1)
+                    allTrialsData['dominant_eye'] = 'L'
 
             # Appending all data to one DataFrame
             if flag == 0:
@@ -85,9 +92,14 @@ class DataPreprocess(object):
                 flag = 1
             allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
 
-        # Rename columns if needed
-        allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
-                                   'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
+        if fixation_only:
+            #Rename columns
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
+                                       'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'dominant_eye']
+        else:
+            # Rename columns if needed
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+                                       'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
 
         # Store all subjects data DF as CSV
         allSubjectsData.to_csv(path + self.output_file_both_eye)
@@ -95,7 +107,7 @@ class DataPreprocess(object):
         # returns path for data csv file
         return data_csv_path
 
-    def read_eyeTracking_data_one_eye_recorded(self):
+    def read_eyeTracking_data_one_eye_recorded(self, fixation_only):
         flag = 0
         path = os.getcwd()
         # Set directory name that contains output directory with asc and txt files
@@ -121,7 +133,10 @@ class DataPreprocess(object):
             # Split data to columns and get only relevnt ones
             ascDf = pd.DataFrame(ascData, columns=['data'])
             ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
-            ascDf = ascDf[[0, 1, 2, 3]]
+            if fixation_only:
+                ascDf = ascDf[[0, 1, 2, 3, 4, 5]]
+            else:
+                ascDf = ascDf[[0, 1, 2, 3]]
             print('Log.....Getting txt file data for subject id - ' + subjectIntId)
             # Read txt file of subject same subject as asc file
             txtFileName = os.path.basename(glob.glob(path + txt_directory + '//*' + subjectIntId + '_Scale' + '*txt')[0])
@@ -163,9 +178,15 @@ class DataPreprocess(object):
                 flag = 1
             allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
 
-        # Rename columns if needed
-        allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
-                                   'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
+        if fixation_only:
+            # Rename columns if needed
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
+                                       'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis',
+                                       'avg_pupil_size', 'dominant_eye']
+        else:
+            # Rename columns if needed
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+                                       'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
 
         # Store all subjects data DF as CSV
         allSubjectsData.to_csv(path + self.output_file_one_eye)
