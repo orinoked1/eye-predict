@@ -26,8 +26,10 @@ data = DataPreprocess(cfg['exp']['etp']['both_eye_path'],
                       cfg['exp']['etp']['output_file_both_eye'],
                       cfg['exp']['etp']['output_file_one_eye1'], [stimSnack, stimFace])
 
-#both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded()
-#one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded()
+fixation_only = True
+both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded(fixation_only)
+one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded(fixation_only)
+"""
 try:
     tidy_data = pd.read_pickle(path + "/etp_data/processed/tidy_data_126_128.pkl")
 except:
@@ -42,6 +44,7 @@ fixation_df = datasetbuilder.get_fixation_dataset(tidy_data)
 scanpath_df = datasetbuilder.get_scanpath_dataset(tidy_data)
 fixation_df.to_pickle(path + "/etp_data/processed/fixation_df_126_128.pkl")
 scanpath_df.to_pickle(path + "/etp_data/processed/scanpath_df_126_128.pkl")
+"""
 
 """
 datavis = DataVis(cfg['exp']['test']['stim_path'], cfg['exp']['test']['visualization_path'], [stimSnack, stimFace], 0)
