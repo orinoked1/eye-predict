@@ -250,6 +250,71 @@ class DataPreprocess(object):
 
         return byImgRegionDataDf
 
+    def data_tidying_for_fixation_dataset_building(self, df, screen_resolution):
+        print('Log..... Data tidying')
+        screen_resolution = [int(x) for x in screen_resolution.split(',')]
+        # Get relevant raw data for fixations and saccades
+        df = df[df['action'].str.contains('EFIX', na=False)]
+        df.dropna(inplace=True, axis=1)
+        fix_action = df["action"].str.split(expand=True)
+        df = pd.concat([fix_action, df], axis=1)
+        df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'subjectID', 'trialNum', 'onsettime',
+                          'stimName', 'bid', 'RT', 'stimType', 'stimId', 'to_remove', 'E_timeStamp',
+                          'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'dominant_eye']
+        df.drop(['to_remove1', 'to_remove'], inplace=True, axis=1)
+        df = df[df['eye'] == df['dominant_eye']]
+        df.reset_index(drop=True, inplace=True)
+
+
+        # List of all fields that will be updated for later use (fixation and saccade)
+        df_fields = ['timeStamp', 'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size']
+
+        # add 'sampleId' field for each uniqe sample
+        df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
+        # Removes data with no bid value
+        fix_df = df[df.bid != 999]
+        # For each field update relevant type and clean not relevant data
+        for field in df_fields:
+            if field in df.columns:
+                print(field)
+                print(type(df[field][0]))
+                if type(df[field][0]) == str:
+                    df[field] = df[field].str.strip()
+                    df[field] = pd.to_numeric(df[field], errors='coerce')
+                    df[field] = df[field].round()
+                    df.dropna(inplace=True)
+                    df[field] = df[field].astype(int)
+                    df.reset_index(drop=True, inplace=True)
+
+
+        # In this section for each stim (snack or face) get the datapoints within the stim boundaries
+        # For fixation dataset and for saccade dataset
+        # TODO: Create one function that gets for input the stim type and size
+        #  and outputs the DF with only datapoints within the stim region
+
+        # FIXATION - stim is snack
+        stim_id = 2
+        stim_resolution = (self.stimarray[0].size)
+        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+        # get only datapoints within stim boundaries
+        FIXstimARegionDataDf = df[
+            ((df['stimId'] == stim_id) & (df['avg_X_axis'] >= min_x) & (df['avg_X_axis'] <= max_x) &
+             (df['avg_Y_axis'] >= min_y) & (df['avg_Y_axis'] <= max_y)) == True]
+
+        # FIXATION - stim face
+        stim_resolution = (self.stimarray[1].size)
+        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+        # get only datapoints within stim boundaries
+        FIXstimBRegionDataDf = df[
+            (((df['stimId'] != stim_id) & (df['avg_X_axis'] >= min_x) & (df['avg_X_axis'] <= max_x) & (
+                    df['avg_Y_axis'] >= min_y) & (df['avg_Y_axis'] <= max_y)) == True)]
+
+        FIXbyImgRegionDataDf = pd.concat([FIXstimARegionDataDf, FIXstimBRegionDataDf])
+        FIXbyImgRegionDataDf.reset_index(drop=True, inplace=True)
+
+
+        return FIXbyImgRegionDataDf
+
     def data_tidying_for_analysis(self, df, screen_resolution, snack_stim_size, face_stim_size):
         print('Log..... Data tidying')
 

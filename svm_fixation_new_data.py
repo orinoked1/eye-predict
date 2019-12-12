@@ -12,9 +12,9 @@ np.random.seed(31415)
 
 path = os.getcwd()
 
+"""
 try:
     df = pd.read_csv(path + "/etp_data/processed/126_138_one_eye_data.csv")
-    df_old = pd.read_pickle(path + "/processed_data/fixation_array_dataset.pkl")
 except:
     raw_data_df_101_117 = pd.read_csv(path + '/output_data_both_eyes_101_117.csv')
     raw_data_df_118_125 = pd.read_csv(path + '/output_data_both_eyes_118_125.csv')
@@ -25,7 +25,7 @@ except:
     scanpath_df.columns = ['subjectID', 'stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
     scanpath_df.to_pickle("etp_scanpath_df.pkl")
 
-"""
+
 try:
     df = pd.read_pickle("df.pkl")
 except:
@@ -40,7 +40,8 @@ df = df[df.scanpath_len > 2300]  # > 75%
 df = df.reset_index()
 """
 try:
-    df = pd.read_pickle("processed_data/fixation_array_dataset.pkl")
+    old_data = pd.read_pickle(path + "/processed_data/fixation_array_dataset.pkl")
+    new_data = pd.read_pickle(path+ "/etp_data/processed/scanpath_df_fixation_126_128.pkl")
 except:
     #get only right eye data
     df = df[df['eye'] == 'R']
