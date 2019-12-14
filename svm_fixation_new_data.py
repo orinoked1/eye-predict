@@ -66,14 +66,20 @@ except:
 
     df.to_pickle("fixation_array_dataset.pkl")
 
-df.dropna(inplace=True)
-df.reset_index(inplace=True)
-df = df.drop_duplicates('sampleId')
+old_data.dropna(inplace=True)
+old_data = old_data.drop_duplicates('sampleId')
+old_data.reset_index(inplace=True)
+old_data = old_data[['stimName', 'stimType', 'sampleId', 'fixation_array', 'bid']]
+old_data.rename(columns={"fixation_array": "scanpath"}, inplace=True)
+
+df = old_data #pd.concat([old_data, new_data])
+#add binary bid column
+df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
 
 # Set the relevant stim
-df = df[df['stimType'] == "Snack"]
+df = df[df['stimType'] == "Face"]
 
-X = df.fixation_array
+X = df.scanpath
 y = df.binary_bid
 X = np.asanyarray(X)
 y = np.asanyarray(y)
@@ -83,6 +89,26 @@ X = sequence.pad_sequences(X, maxlen=max_vector_length)
 
 dataset_size = len(X)
 X = X.reshape(dataset_size, -1)
+
+#add binary bid column
+new_data['binary_bid'] = pd.qcut(new_data.bid, 2, labels=[0, 1])
+
+# Set the relevant stim
+new_data = new_data[new_data['stimType'] == "Snack"]
+
+test_X = new_data.scanpath
+test_y = new_data.binary_bid
+test_X = np.asanyarray(test_X)
+test_y = np.asanyarray(test_y)
+# Set the vector length - milliseconds size window.
+max_vector_length = 17
+test_X = sequence.pad_sequences(test_X, maxlen=max_vector_length)
+
+dataset_size = len(test_X)
+test_X = test_X.reshape(dataset_size, -1)
+
+X_traintt, test_X, y_traintt, test_y = train_test_split(
+    test_X, test_y, test_size=0.33, random_state=42)
 
 #cross validation correct lables
 scores = []
@@ -95,8 +121,8 @@ for train_index, test_index in kf.split(X):
     clf = svm.SVC(kernel="rbf", gamma=0.00001)
     clf.fit(X_train, y_train)
     print("Train score: ", clf.score(X_train, y_train))
-    print("Test score: ", clf.score(X_test, y_test))
-    scores.append(clf.score(X_test, y_test))
+    print("Test score: ", clf.score(test_X, test_y))
+    scores.append(clf.score(test_X, test_y))
 
 print("ACC: ", (sum(scores) / len(scores))*100)
 svm_scores_df = pd.DataFrame(scores, columns=['scores'])
