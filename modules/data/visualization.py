@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 import scipy.misc
+from heatmappy import Heatmapper
 
 class DataVis(object):
 
@@ -22,6 +23,18 @@ class DataVis(object):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         return image
+
+    def heatmap(self, SCANPATH, imgToPlot_size, path, stimulus_name, dest_fn):
+        stimulus = self.stimulus(path, stimulus_name)
+        stimulus = cv2.resize(stimulus, imgToPlot_size)
+        example_points = SCANPATH
+        example_img = stimulus
+        heatmapper = Heatmapper()
+        heatmap = heatmapper.heatmap_on_img(example_points, example_img)
+
+        scipy.misc.imsave(self.currpath + self.vispath + 'heatMapEX.jpg', heatmap)
+
+        return
 
     def map(self, FIXATION_MAP, imgToPlot_size, path, stimulus_name):
         """
