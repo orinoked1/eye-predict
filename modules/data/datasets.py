@@ -84,7 +84,7 @@ class DatasetBuilder(object):
         print('Log..... get scanpath data for sampleId: ', sampleId)
         # todo - add downsampling option for the data poinnts
         scanpath = []
-        # t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
+        t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
         x = data_df[data_df['sampleId'] == sampleId].X_axis.astype(int)
         y = data_df[data_df['sampleId'] == sampleId].Y_axis.astype(int)
         if len(x) | len(y) < 5:

@@ -1,45 +1,42 @@
-import visualize_data_functions as vis
-import run_model
 import sys
 sys.path.append('../')
-import models
-import ds_readers as ds
-import matplotlib as mpl
+import pandas as pd
+from modules.data.preprocessing import DataPreprocess
+from modules.data.datasets import DatasetBuilder
+from modules.data.stim import Stim
+import os
+import yaml
 
-"""
-Visualization lalala
-"""
 
-fixation_df = ds.get_fixation_df()
-scanpath_df = ds.get_scanpath_df()
-stimTypes = fixation_df.stimType.unique()
-vis.visualize(fixation_df, scanpath_df, stimTypes[0])
+path = os.getcwd()
+expconfig = "/modules/config/experimentconfig.yaml"
+with open(path + expconfig, 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
 
-"""
-num_epochs = 10
-batch_size = 64
+stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
+stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
+data = DataPreprocess(cfg['exp']['etp']['both_eye_path'],
+                      cfg['exp']['etp']['one_eye_path1'],
+                      cfg['exp']['etp']['trial_start_str'],
+                      cfg['exp']['etp']['trial_end_str'],
+                      cfg['exp']['etp']['output_file_both_eye'],
+                      cfg['exp']['etp']['output_file_one_eye1'], [stimSnack, stimFace])
 
-""""""Run model CNN simple""""""
-model = models.cnnSimple()
+fixation_only = False
+both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded(fixation_only)
+one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded(fixation_only)
 
-use_cuda, log, x_dtype, y_dtype, n_epochs, criterion = run_model.init(num_epochs, "cnn_loss.txt")
+try:
+    tidy_data = pd.read_pickle(path + "/etp_data/processed/tidy_data_40_subjects.pkl")
+except:
+    both_eye_data = pd.read_csv(path + "/etp_data/processed/40_subjects_both_eye_data.csv") #(both_eye_data_path)
+    one_eye_data = pd.read_csv(path + "/etp_data/processed/40_subjects_one_eye_data.csv") #(one_eye_data_path)
+    all_data = pd.concat([both_eye_data, one_eye_data])
+    tidy_data = data.data_tidying_for_dataset_building(all_data, cfg['exp']['etp']['screen_resolution'])
+    tidy_data.to_pickle(path + "/etp_data/processed/tidy_data_40_subjects.pkl")
 
-print("preparing training and test sets")
-x_train, x_test, y_train, y_test = ds.get_train_test_dataset()
-
-X_train, X_val, Y_train, Y_val = ds.get_train_val_dataset(x_train, y_train)
-
-print("Start train")
-train_loss_curve, val_loss_curve = run_model.train_by_batches(model, X_train, Y_train, X_val, Y_val, criterion, use_cuda, log, x_dtype, y_dtype, n_epochs, batch_size)
-
-print("Run test")
-test_total_loss = run_model.test(model, x_test, y_test, criterion, log, x_dtype, y_dtype)
-
-log.close()
-
-#torch.save(model.state_dict(), models.checkpoint_cnn_path())
-
-plot = run_model.plot_train_val_loss_curve(use_cuda, n_epochs, train_loss_curve, val_loss_curve)
-
-plot.show()
-"""
+datasetbuilder = DatasetBuilder([stimSnack, stimFace])
+fixation_df = datasetbuilder.get_fixation_dataset(tidy_data)
+scanpath_df = datasetbuilder.get_scanpath_dataset(tidy_data)
+fixation_df.to_pickle(path + "/etp_data/processed/fixation_df__40_subjects.pkl")
+scanpath_df.to_pickle(path + "/etp_data/processed/scanpath_df__40_subjects.pkl")

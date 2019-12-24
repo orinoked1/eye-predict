@@ -69,7 +69,7 @@ def create_cnn(width, height, depth, filters=(16, 32, 64), regress=False):
 	# return the CNN
 	return model
 
-def baseline_cnn(activation='relu'):
+def two_concat_cnn(activation='relu'):
 
     # Defining input 1
     input1 = Embedding(SAMPLE_SIZE, EMBEDDING_DIMS, input_length=MAX_SMI_LEN)

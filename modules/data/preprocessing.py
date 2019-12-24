@@ -31,6 +31,9 @@ class DataPreprocess(object):
             tempList = ascFileName.split('_')
             subjectIntId = tempList[0]
             id = int(subjectIntId)
+            ### Hack for id - 101
+            if id == 102:
+                print('Excluded subjectId - 101')
             if id in excluded_participents.exclude.values:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
