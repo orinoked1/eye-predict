@@ -69,6 +69,7 @@ def create_cnn(width, height, depth, filters=(16, 32, 64), regress=False):
 	# return the CNN
 	return model
 
+"""
 def two_concat_cnn(activation='relu'):
 
     # Defining input 1
@@ -92,3 +93,4 @@ def two_concat_cnn(activation='relu'):
     model.compile(loss='binary_crossentropy', optimizer='adam',  metrics=['accuracy'])
 
     return model
+"""
