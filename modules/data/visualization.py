@@ -18,7 +18,7 @@ class DataVis(object):
         """ This functions returns the matrix of pixels of a specified stimulus.
             """
 
-        path = self.stimpath + DATASET_NAME + STIMULUS_NAME
+        path = self.currpath + DATASET_NAME + STIMULUS_NAME
         image = cv2.imread(path, 1)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -44,7 +44,7 @@ class DataVis(object):
         stimulus = self.stimulus(path, stimulus_name)
 
         toPlot = stimulus
-        fixation_map = FIXATION_MAP
+        fixation_map = FIXATION_MAP.T
         fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
         toPlot = cv2.resize(toPlot, imgToPlot_size)
         fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
@@ -106,17 +106,18 @@ class DataVis(object):
 
         np.random.seed(400)
         fixation_sample = fixation_specific_stim_df.sample(n=1)
-
+        f_stimName = fixation_sample.stimName.values[0]
         sample = fixation_sample['sampleId'].values[0]
         print("Visualize sampleId - ", sample)
 
         sample_index = fixation_sample.index[0]
         scanpath_sample = scanpath_specific_stim_df.loc[sample_index]
+        s_stimName = scanpath_sample.stimName
         imgToPlot_size = (self.stim.size[0], self.stim.size[1])
 
         print('Log..... visualizing fixation map')
-        self.map(fixation_sample.fixationMap.values[0], imgToPlot_size, self.stimpath, self.stim.name)
+        self.map(fixation_sample.fixationMap.values[0], imgToPlot_size, self.stimpath, f_stimName)
         print('Log... visualizing scanpath')
-        self.scanpath(scanpath_sample.scanpath, imgToPlot_size, self.stimpath, self.stim.name, False)
+        self.scanpath(scanpath_sample.scanpath, imgToPlot_size, self.stimpath, s_stimName, False)
 
         return

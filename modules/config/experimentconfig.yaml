@@ -4,8 +4,8 @@ exp:
     name: etp
     both_eye_path: /etp_data/output_both_eye
     one_eye_path1: /etp_data/output_one_eye
-    stim_path: /etp_data/Stim0
-    visualization_path: /etp_data/visualized_data
+    stim_path: /etp_data/Stim_0/
+    visualization_path: /etp_data/visualized_data/
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
     output_file_both_eye: /etp_data/processed/40_subjects_both_eye_data.csv
