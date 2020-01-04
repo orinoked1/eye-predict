@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import os
 import scipy.misc
-from heatmappy import Heatmapper
+#from heatmappy import Heatmapper
 
 class DataVis(object):
 
