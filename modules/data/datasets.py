@@ -4,6 +4,7 @@ import os
 from eye_tracking_data_parser import raw_data_preprocess as parser
 from sklearn.utils import shuffle
 import pandas as pd
+from modules.data.visualization import DataVis
 import pickle
 
 class DatasetBuilder(object):
@@ -97,3 +98,34 @@ class DatasetBuilder(object):
         scanpath = np.asanyarray(scanpath).T
 
         return np.asanyarray(scanpath)
+
+    def load_fixation_maps_dataset(self, df):
+        print("Log.....Loading maps")
+        maps = []
+        for fixation_map in np.asanyarray(df.fixationMap):
+            print("....")
+            fixation_map = np.pad(fixation_map, [(0, 1), (0, 1)], mode='constant')
+            fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
+            fixation_map = fixation_map/255
+            maps.append(fixation_map)
+
+        return maps
+
+    def load_images_dataset(self, df, img_size):
+        print("Log.....Loading images")
+        images = []
+        for image in np.asanyarray(df.stimName):
+            print("....")
+            img = DataVis.stimulus("../../etp_data/Stim_0/", image)
+            img = cv2.resize(img, img_size)
+            img = img / 255
+            images.append(img)
+
+        return images
+
+    def load_labels_dataset(self, df):
+        print("Log.....Loading labels")
+        df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
+        labels = np.asanyarray(df.binary_bid)
+
+        return labels

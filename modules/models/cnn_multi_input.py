@@ -25,7 +25,7 @@ path = os.getcwd()
 use_gpu = tf.test.is_gpu_available()
 print("use GPU?:",use_gpu )
 
-def create_cnn(width, height, depth, filters=(16, 32, 64), regress=False):
+def create_cnn(width, height, depth, filters=(16, 32, 64, 128), regress=False):
 	# initialize the input shape and channel dimension, assuming
 	# TensorFlow/channels-last ordering
 	inputShape = (height, width, depth)

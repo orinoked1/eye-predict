@@ -3,12 +3,16 @@
 
 # import the necessary packages
 from modules.models import cnn_multi_input
-from modules.data import datasets
+from modules.data.datasets import DatasetBuilder
+from modules.data.stim import Stim
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
-from matplotlib import plt
-from pyimagesearch import datasets
-from pyimagesearch import models
+from matplotlib import pyplot as plt
+import yaml
+from sklearn.utils import shuffle
+import pickle
+#from pyimagesearch import datasets
+#from pyimagesearch import models
 from sklearn.model_selection import train_test_split
 from keras.layers.core import Dense
 from keras.models import Model
@@ -18,33 +22,79 @@ import numpy as np
 import argparse
 import locale
 import os
+import pandas as pd
 
+expconfig = "../config/experimentconfig.yaml"
+with open(expconfig, 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
+stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
+datasetbuilder = DatasetBuilder([stimSnack, stimFace])
+print("Log.....Reading fixation data")
+fixation_df = pd.read_pickle("../../etp_data/processed/fixation_df__40_subjects.pkl")
+fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stimFace.name]
+fixation_specific_stim_df.reset_index(inplace=True)
+img_size = (stimFace.size[0], stimFace.size[1])
 
-#load scanpath df/ndarray #creat func in datasets.py considering normelizing the coordinates deviding by max value
-####EXAMPLE#####
-# find the largest house price in the training set and use it to
-# scale our house prices to the range [0, 1] (will lead to better
-# training and convergence)
-maxPrice = trainAttrX["price"].max()
-trainY = trainAttrX["price"] / maxPrice
-testY = testAttrX["price"] / maxPrice
-################
+#loading maps, images and labels datasets
+"""
+maps = datasetbuilder.load_fixation_maps_dataset(fixation_specific_stim_df)
+images = datasetbuilder.load_images_dataset(fixation_specific_stim_df, img_size)
+labels = datasetbuilder.load_labels_dataset(fixation_specific_stim_df)
+"""
+try:
+	print("loading maps")
+	maps = np.load("../../etp_data/processed/maps.npy")
+	print("loading images")
+	images = np.load("../../etp_data/processed/images.npy")
+	print("loading labels")
+	labels = np.load("../../etp_data/processed/labels.npy")
 
-#load sample image #creat func for that in datasets.py and make sure to normelize the pixels /255.0
+except:
+	maps = datasetbuilder.load_fixation_maps_dataset(fixation_specific_stim_df)
+	images = datasetbuilder.load_images_dataset(fixation_specific_stim_df, img_size)
+	labels = datasetbuilder.load_labels_dataset(fixation_specific_stim_df)
+	maps, images, labels = shuffle(maps, images, labels, random_state=42)
+	print("saving maps")
+	np.save("../../etp_data/processed/maps.npy", maps)
+	print("saving images")
+	np.save("../../etp_data/processed/images.npy", images)
+	print("saving labels")
+	np.save("../../etp_data/processed/labels.npy", labels)
 
 # partition the data into training and testing splits using 75% of
 # the data for training and the remaining 25% for testing
 print("[INFO] processing data...")
-#df and ndarray
-split = train_test_split(df, images, test_size=0.25, random_state=42)
-(trainAttrX, testAttrX, trainImagesX, testImagesX) = split
+dataSize = len(maps)
+trainSize = dataSize*0.75
+trainMapsX = maps[:trainSize]
+testMapsX = maps[trainSize:]
+trainImagesX = images[:trainSize]
+testImagesX = images[trainSize:]
+trainY = labels[:trainSize]
+testY = labels[trainSize:]
+#validation split
+testDataSize = len(testMapsX)
+testSize = testDataSize*0.75
+testMapsX = maps[:testSize]
+valMapsX = maps[testSize:]
+testImagesX = images[:testSize]
+valImagesX = images[testSize:]
+testY = labels[:testSize]
+valY = labels[testSize:]
 
-# create the two and CNN models
-cnn_scanpath = models.create_cnn(64, 64, 3, regress=False)
-cnn_image = models.create_cnn(64, 64, 3, regress=False)
+#split = train_test_split(maps, images, labels, test_size=0.25, random_state=42)
+#(trainMapsX, testMapsX, trainImagesX, testImagesX, trainY, testY) = split
 
-# create the input to our final set of layers as the *output* of both
-# the MLP and CNN
+#split test data to test and validation
+#validation_split = train_test_split(testMapsX, testImagesX, testY, test_size=0.25, random_state=42)
+#(testMapsX, valMapsX, testImagesX, valImagesX, testY, valY) = validation_split
+
+# create the two CNN models
+cnn_scanpath = cnn_multi_input.create_cnn(600, 480, 3, regress=False)
+cnn_image = cnn_multi_input.create_cnn(600, 480, 3, regress=False)
+
+# create the input to our final set of layers as the *output* of both CNNs
 combinedInput = concatenate([cnn_scanpath.output, cnn_image.output])
 
 # our final FC layer head will have two dense layers, the final one
@@ -65,8 +115,8 @@ model.compile(loss='binary_crossentropy', optimizer=opt,  metrics=['accuracy'])
 # train the model
 print("[INFO] training model...")
 history = model.fit(
-	[trainAttrX, trainImagesX], trainY,
-	validation_data=([testAttrX, testImagesX], testY),
+	[trainMapsX, trainImagesX], trainY,
+	validation_data=([valMapsX, valImagesX], valY),
 	epochs=200, batch_size=8)
 
 # plot metrics
@@ -74,8 +124,8 @@ plt.plot(history.history['acc'])
 plt.show()
 
 # make predictions on the testing data
-y_pred_keras = Model.predict(X_test).ravel()
-fpr_keras, tpr_keras, thresholds_keras = roc_curve(y_test, y_pred_keras)
+predY = model.predict([testMapsX, testImagesX]).ravel()
+fpr_keras, tpr_keras, thresholds_keras = roc_curve(testY, predY)
 
 auc_keras = auc(fpr_keras, tpr_keras)
 
@@ -102,7 +152,7 @@ plt.legend(loc='best')
 plt.show()
 
 
-
+"""
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, required=True,
@@ -193,3 +243,4 @@ print("[INFO] avg. house price: {}, std house price: {}".format(
 	locale.currency(df["price"].mean(), grouping=True),
 	locale.currency(df["price"].std(), grouping=True)))
 print("[INFO] mean: {:.2f}%, std: {:.2f}%".format(mean, std))
+"""

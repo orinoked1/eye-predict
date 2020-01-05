@@ -11,14 +11,14 @@ class DataVis(object):
         self.stim = self.stimarray[stiminx]
         self.stimpath = stimpath
         self.vispath = vispath
-        self.currpath = path = os.getcwd()
+        self.currpath = os.getcwd()
 
-    def stimulus(self, DATASET_NAME, STIMULUS_NAME):
+    @staticmethod
+    def stimulus(DATASET_NAME, STIMULUS_NAME):
 
         """ This functions returns the matrix of pixels of a specified stimulus.
             """
-
-        path = self.currpath + DATASET_NAME + STIMULUS_NAME
+        path = DATASET_NAME + STIMULUS_NAME
         image = cv2.imread(path, 1)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -44,7 +44,8 @@ class DataVis(object):
         stimulus = self.stimulus(path, stimulus_name)
 
         toPlot = stimulus
-        fixation_map = FIXATION_MAP.T
+        fixation_map = FIXATION_MAP
+        fixation_map = np.pad(fixation_map, [(0, 1), (0, 1)], mode='constant')
         fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
         toPlot = cv2.resize(toPlot, imgToPlot_size)
         fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
@@ -95,7 +96,7 @@ class DataVis(object):
         for i in range(len(toPlot)):
             if (i % 50) == 0:
                 figName = str(i) + '_scanPathEX.jpg'
-                scipy.misc.imsave(self.currpath, self.vispath + figName, toPlot[i])
+                scipy.misc.imsave(self.currpath + self.vispath + figName, toPlot[i])
 
         return
 
@@ -104,7 +105,7 @@ class DataVis(object):
         fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == self.stim.name]
         scanpath_specific_stim_df = scanpath_df[scanpath_df['stimType'] == self.stim.name]
 
-        np.random.seed(400)
+        np.random.seed(404)
         fixation_sample = fixation_specific_stim_df.sample(n=1)
         f_stimName = fixation_sample.stimName.values[0]
         sample = fixation_sample['sampleId'].values[0]
