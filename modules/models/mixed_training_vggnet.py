@@ -11,24 +11,29 @@ from matplotlib import pyplot as plt
 import yaml
 from sklearn.utils import shuffle
 from keras.layers.core import Dense
+from keras.layers.convolutional import MaxPooling2D
+from keras.layers.core import Flatten
+from keras.layers.convolutional import Conv2D
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.layers import concatenate
 import numpy as np
 import pandas as pd
+from keras.layers.core import Dropout
+
 import scipy.misc
 
 expconfig = "../config/experimentconfig.yaml"
 with open(expconfig, 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+	cfg = yaml.load(ymlfile)
 stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
 stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
-datasetbuilder = DatasetBuilder([stimSnack, stimFace])
+datasetbuilder = DatasetBuilder()
 print("Log.....Reading fixation data")
 fixation_df = pd.read_pickle("../../etp_data/processed/fixation_df__40_subjects.pkl")
 #choose stim to run on - Face or Snack
-stim = stimSnack
-stimName = "snack_"
+stim = stimFace
+stimName = "face_imagenet"
 fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stim.name]
 fixation_specific_stim_df.reset_index(inplace=True)
 img_size = (stim.size[0], stim.size[1])
@@ -36,11 +41,11 @@ img_size = (stim.size[0], stim.size[1])
 #loading maps, images and labels datasets
 try:
 	print("loading maps")
-	maps = np.load("../../etp_data/processed/" + stimName + "maps.npy")
+	maps = np.load("../../etp_data/processed/maps.npy")
 	print("loading images")
-	images = np.load("../../etp_data/processed/" + stimName + "images.npy")
+	images = np.load("../../etp_data/processed/images.npy")
 	print("loading labels")
-	labels = np.load("../../etp_data/processed/" + stimName + "labels.npy")
+	labels = np.load("../../etp_data/processed/labels.npy")
 
 except:
 	maps = datasetbuilder.load_fixation_maps_dataset(fixation_specific_stim_df)
@@ -57,9 +62,6 @@ except:
 # partition the data into training and testing splits using 75% of
 # the data for training and the remaining 25% for testing
 print("[INFO] processing data...")
-
-scipy.misc.imsave("../../etp_data/processed/image.jpg", images[90])
-
 dataSize = len(maps)
 trainSize = int(dataSize*0.75)
 trainMapsX = maps[:trainSize]
@@ -87,20 +89,36 @@ testY = testY[testSize:]
 #(testMapsX, valMapsX, testImagesX, valImagesX, testY, valY) = validation_split
 
 # create the two CNN models
-cnn_scanpath = cnn_multi_input.create_cnn(stim.size[0], stim.size[1], 3, regress=False)
-cnn_image = cnn_multi_input.create_cnn(stim.size[0], stim.size[1], 3, regress=False)
+vgg_map_model = cnn_multi_input.create_vggNet(stim.size[0], stim.size[1], 3)
+vgg_image_model = cnn_multi_input.create_vggNet(stim.size[0], stim.size[1], 3)
+
+for layer in vgg_map_model.layers:
+	layer.name = layer.name + str("_map")
+	layer.trainable = False
+
+for layer in vgg_image_model.layers:
+	layer.name = layer.name + str("_image")
+	layer.trainable = False
 
 # create the input to our final set of layers as the *output* of both CNNs
-combinedInput = concatenate([cnn_scanpath.output, cnn_image.output])
+combinedInput = concatenate([vgg_map_model.output, vgg_image_model.output])
 
-# our final FC layer head will have two dense layers, the final one
-# being our regression head
-x = Dense(4, activation="relu")(combinedInput)
-x = Dense(1, activation="sigmoid")(x)
+# Stacking a new simple convolutional network on top of it
+x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu')(combinedInput)
+x = MaxPooling2D(pool_size=(2, 2))(x)
+x = Flatten()(x)
+x = Dense(256, activation='relu')(x)
+x = Dropout(0.5)(x)
+x = Dense(1, activation='sigmoid')(x)
 
 # our final model will accept scanpth on one CNN
 # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
-model = Model(inputs=[cnn_scanpath.input, cnn_image.input], outputs=x)
+model = Model(inputs=[vgg_map_model.input, vgg_image_model.input], outputs=x)
+print(model.summary())
+
+for layer in model.layers:
+  print(layer.name)
+
 
 # compile the model using mean absolute percentage error as our loss,
 # implying that we seek to minimize the absolute percentage difference

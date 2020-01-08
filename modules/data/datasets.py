@@ -6,11 +6,20 @@ from sklearn.utils import shuffle
 import pandas as pd
 from modules.data.visualization import DataVis
 import pickle
+import yaml
+from modules.data.stim import Stim
+
 
 class DatasetBuilder(object):
 
-    def __init__(self, stimarray):
-       self.stimarray = stimarray
+    def __init__(self):
+        expconfig = "../config/experimentconfig.yaml"
+        with open(expconfig, 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+        self.stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'],
+                         cfg['exp']['etp']['stimSnack']['size'])
+        self.stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'],
+                        cfg['exp']['etp']['stimFace']['size'])
 
     def get_fixation_dataset(self, data_df):
         print('Log..... Build fixation dataset')
@@ -22,9 +31,9 @@ class DatasetBuilder(object):
             stimType = data_df[data_df['sampleId'] == sampleId].stimType.unique()
             sample = data_df[data_df['sampleId'] == sampleId].sampleId.unique()
             if stimType == 'Snack':
-                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimarray[0])
+                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimSnack)
             else:
-                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimarray[1])
+                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimFace)
 
             if type(fixationMap) is not np.ndarray:
                 continue
@@ -47,8 +56,8 @@ class DatasetBuilder(object):
         if len(x) | len(y) < 5:
             print('Fixation data is None for sampleId: ', sampleId)
             return None
-        xedges = np.arange(stim.size[0])  # 480/576 TODO add the max image size as const
-        yedges = np.arange(stim.size[1])  # 600/432
+        xedges = np.arange(stim.size[0])
+        yedges = np.arange(stim.size[1])
 
         heatmap, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
         heatmap = heatmap.T  # Let each row list bins with common y range.
@@ -129,3 +138,29 @@ class DatasetBuilder(object):
         labels = np.asanyarray(df.binary_bid)
 
         return labels
+
+    def load_fixations_related_datasets(self, stimType, path):
+        print("Log.....Reading fixation data")
+        fixation_df = pd.read_pickle(path)
+        # choose stim to run on - Face or Snack
+        if stimType == "Face":
+            stim = self.stimFace
+            stimName = "face_imagenet_"
+        else:
+            stim = self.stimSnack
+            stimName = "snack_imagenet_"
+        fixation_df_by_stim = fixation_df[fixation_df['stimType'] == stim.name]
+        fixation_df_by_stim.reset_index(inplace=True)
+        stim_size = (stim.size[0], stim.size[1])
+
+        maps = self.load_fixation_maps_dataset(fixation_df_by_stim)
+        images = self.load_images_dataset(fixation_df_by_stim, stim_size)
+        labels = self.load_labels_dataset(fixation_df_by_stim)
+
+        return maps, images, labels, stim_size
+
+    def train_val_test_split_per_subject(self, maps, images, labels):
+
+
+
+        return trainMapsX, valMapsX, testMapsX, trainImagesX, testImagesX, valImagesX, trainY, valY, testY

@@ -12,6 +12,7 @@ from keras.layers.core import Dense
 from keras.layers import Flatten
 from keras.layers import Input
 from keras.models import Model
+from keras.applications import VGG16
 
 import tensorflow as tf
 
@@ -68,6 +69,19 @@ def create_cnn(width, height, depth, filters=(16, 32, 64, 128), regress=False):
 
 	# return the CNN
 	return model
+
+def create_vggNet(width, height, depth):
+	# initialize the input shape and channel dimension, assuming
+	# TensorFlow/channels-last ordering
+	inputShape = (height, width, depth)
+
+	# define the model input
+	inputs = Input(shape=inputShape)
+
+	model = VGG16(include_top=False, weights='imagenet', input_shape=inputShape)
+
+	return model
+
 
 """
 def two_concat_cnn(activation='relu'):
