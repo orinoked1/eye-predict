@@ -8,6 +8,7 @@ from modules.data.visualization import DataVis
 import pickle
 import yaml
 from modules.data.stim import Stim
+import scipy.misc
 
 
 class DatasetBuilder(object):
@@ -110,34 +111,35 @@ class DatasetBuilder(object):
 
     def load_fixation_maps_dataset(self, df):
         print("Log.....Loading maps")
-        maps = []
-        for fixation_map in np.asanyarray(df.fixationMap):
-            print("....")
-            fixation_map = np.pad(fixation_map, [(0, 1), (0, 1)], mode='constant')
-            fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
-            fixation_map = fixation_map/255
-            maps.append(fixation_map)
+        df['fixationMap'] = df['fixationMap'].apply(lambda x: np.pad(x, [(0, 1), (0, 1)], mode='constant'))
+        df['fixationMap'] = df['fixationMap'].apply(lambda x: cv2.cvtColor(np.uint8(x), cv2.COLOR_GRAY2RGB) * 255)
+        df['fixationMap'] = df['fixationMap'].apply(lambda x: x / 255)
 
-        return maps
+        return df[["sampleId", "fixationMap"]]
 
     def load_images_dataset(self, df, img_size):
         print("Log.....Loading images")
-        images = []
-        for image in np.asanyarray(df.stimName):
-            print("....")
+        img_dict = {}
+        for image in np.asanyarray(df.stimName.unique()):
+            print("loading image - " + image)
             img = DataVis.stimulus("../../etp_data/Stim_0/", image)
             img = cv2.resize(img, img_size)
             img = img / 255
-            images.append(img)
+            img_dict[image] = img
+        img_df = pd.DataFrame(list(img_dict.items()), columns=['stimName', 'img'])
+        #scipy.misc.imsave("../../etp_data/processed/temp0.jpg", img_dict["1_1027.jpg"])
+        newdf = pd.merge(df, img_df, on='stimName', how='left')
+        #x = dfnew[dfnew['stimName'] == "1_1027.jpg"]
+        #scipy.misc.imsave("../../etp_data/processed/temp1.jpg", x["img"].values[0])
 
-        return images
+        return newdf[["sampleId", "img"]]
 
     def load_labels_dataset(self, df):
         print("Log.....Loading labels")
         df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
-        labels = np.asanyarray(df.binary_bid)
+        #labels = np.asanyarray(df.binary_bid)
 
-        return labels
+        return df[["sampleId", "binary_bid"]]
 
     def load_fixations_related_datasets(self, stimType, path):
         print("Log.....Reading fixation data")
@@ -159,7 +161,12 @@ class DatasetBuilder(object):
 
         return maps, images, labels, stim_size
 
-    def train_val_test_split_per_subject(self, maps, images, labels):
+    def train_test_val_split_subjects_balnced(self, maps, images, labels):
+
+        df = maps.merge(images, on='sampleId').merge(labels, on='sampleId')
+        df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
+        for subjectId in df.sampleId.values:
+            print(subjectId.split("_")[0])
 
 
 

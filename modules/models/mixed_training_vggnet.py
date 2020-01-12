@@ -23,6 +23,13 @@ from keras.layers.core import Dropout
 
 import scipy.misc
 
+datasetbuilder = DatasetBuilder()
+path = "../../etp_data/processed/fixation_df__40_subjects.pkl"
+stimType = "Face"
+maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(stimType, path)
+split = datasetbuilder.train_test_val_split_subjects_balnced(maps, images, labels)
+trainMapsX, valMapsX, testMapsX, trainImagesX, testImagesX, valImagesX, trainY, valY, testY = split
+"""
 expconfig = "../config/experimentconfig.yaml"
 with open(expconfig, 'r') as ymlfile:
 	cfg = yaml.load(ymlfile)
@@ -33,7 +40,7 @@ print("Log.....Reading fixation data")
 fixation_df = pd.read_pickle("../../etp_data/processed/fixation_df__40_subjects.pkl")
 #choose stim to run on - Face or Snack
 stim = stimFace
-stimName = "face_imagenet"
+stimName = "face_imagenet_1"
 fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stim.name]
 fixation_specific_stim_df.reset_index(inplace=True)
 img_size = (stim.size[0], stim.size[1])
@@ -80,7 +87,7 @@ testImagesX = testImagesX[testSize:]
 valY = testY[:testSize]
 testY = testY[testSize:]
 
-
+"""
 #split = train_test_split(maps, images, labels, test_size=0.25, random_state=42)
 #(trainMapsX, testMapsX, trainImagesX, testImagesX, trainY, testY) = split
 
@@ -89,12 +96,12 @@ testY = testY[testSize:]
 #(testMapsX, valMapsX, testImagesX, valImagesX, testY, valY) = validation_split
 
 # create the two CNN models
-vgg_map_model = cnn_multi_input.create_vggNet(stim.size[0], stim.size[1], 3)
-vgg_image_model = cnn_multi_input.create_vggNet(stim.size[0], stim.size[1], 3)
+vgg_map_model = cnn_multi_input.create_vggNet(stim_size[0], stim_size[1], 3)
+vgg_image_model = cnn_multi_input.create_vggNet(stim_size[0], stim_size[1], 3)
 
 for layer in vgg_map_model.layers:
 	layer.name = layer.name + str("_map")
-	layer.trainable = False
+	#layer.trainable = False
 
 for layer in vgg_image_model.layers:
 	layer.name = layer.name + str("_image")
@@ -131,7 +138,7 @@ print("[INFO] training model...")
 history = model.fit(
 	[trainMapsX, trainImagesX], trainY,
 	validation_data=([valMapsX, valImagesX], valY),
-	epochs=100, batch_size=16)
+	epochs=10, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy
