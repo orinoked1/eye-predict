@@ -8,6 +8,7 @@ from modules.data.visualization import DataVis
 import pickle
 import yaml
 from modules.data.stim import Stim
+from sklearn.utils import shuffle
 import scipy.misc
 
 
@@ -161,13 +162,48 @@ class DatasetBuilder(object):
 
         return maps, images, labels, stim_size
 
-    def train_test_val_split_subjects_balnced(self, maps, images, labels):
+    def train_test_val_split_subjects_balnced(self, maps, images, labels, seed):
 
         df = maps.merge(images, on='sampleId').merge(labels, on='sampleId')
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
-        for subjectId in df.sampleId.values:
-            print(subjectId.split("_")[0])
+        trainset = []
+        testset = []
+        valset = []
+        flag = 0
+        for subject in df.subjectId.unique():
+            dfsubject = df[df["subjectId"] == subject]
+            dfsubject = shuffle(dfsubject, random_state=seed)
+            dataSize = dfsubject.shape[0]
+            trainSize = int(dataSize * 0.75)
+            train = dfsubject[:trainSize]
+            test = dfsubject[trainSize:]
+            # validation split
+            testDataSize = test.shape[0]
+            testSize = int(testDataSize * 0.70)
+            val = test[:testSize]
+            test = test[testSize:]
+            if flag == 0:
+                trainset = train
+                valset = val
+                testset = test
+                flag = 1
+            else:
+                trainset = pd.concat([trainset, train])
+                valset = pd.concat([valset, val])
+                testset = pd.concat([testset, test])
 
+        print("train", trainset.binary_bid.value_counts())
+        print("val", valset.binary_bid.value_counts())
+        print("test", testset.binary_bid.value_counts())
 
+        trainMapsX = np.asanyarray(trainset.fixationMap)
+        valMapsX = np.asanyarray(valset.fixationMap)
+        testMapsX = np.asanyarray(testset.fixationMap)
+        trainImagesX = np.asanyarray(trainset.img)
+        valImagesX = np.asanyarray(valset.img)
+        testImagesX = np.asanyarray(testset.img)
+        trainY = np.asanyarray(trainset.binary_bid)
+        valY = np.asanyarray(valset.binary_bid)
+        testY = np.asanyarray(testset.binary_bid)
 
-        return trainMapsX, valMapsX, testMapsX, trainImagesX, testImagesX, valImagesX, trainY, valY, testY
+        return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
