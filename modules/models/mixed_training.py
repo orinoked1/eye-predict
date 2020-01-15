@@ -18,77 +18,19 @@ import numpy as np
 import pandas as pd
 import scipy.misc
 
-expconfig = "../config/experimentconfig.yaml"
-with open(expconfig, 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
-stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
-stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
-datasetbuilder = DatasetBuilder([stimSnack, stimFace])
-print("Log.....Reading fixation data")
-fixation_df = pd.read_pickle("../../etp_data/processed/fixation_df__40_subjects.pkl")
-#choose stim to run on - Face or Snack
-stim = stimSnack
-stimName = "snack_"
-fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == stim.name]
-fixation_specific_stim_df.reset_index(inplace=True)
-img_size = (stim.size[0], stim.size[1])
 
-#loading maps, images and labels datasets
-try:
-	print("loading maps")
-	maps = np.load("../../etp_data/processed/" + stimName + "maps.npy")
-	print("loading images")
-	images = np.load("../../etp_data/processed/" + stimName + "images.npy")
-	print("loading labels")
-	labels = np.load("../../etp_data/processed/" + stimName + "labels.npy")
-
-except:
-	maps = datasetbuilder.load_fixation_maps_dataset(fixation_specific_stim_df)
-	images = datasetbuilder.load_images_dataset(fixation_specific_stim_df, img_size)
-	labels = datasetbuilder.load_labels_dataset(fixation_specific_stim_df)
-	maps, images, labels = shuffle(maps, images, labels, random_state=42)
-	print("saving maps")
-	np.save("../../etp_data/processed/" + stimName + "maps.npy", maps)
-	print("saving images")
-	np.save("../../etp_data/processed/" + stimName + "images.npy", images)
-	print("saving labels")
-	np.save("../../etp_data/processed/" + stimName + "labels.npy", labels)
-
-# partition the data into training and testing splits using 75% of
-# the data for training and the remaining 25% for testing
-print("[INFO] processing data...")
-
-scipy.misc.imsave("../../etp_data/processed/image.jpg", images[90])
-
-dataSize = len(maps)
-trainSize = int(dataSize*0.75)
-trainMapsX = maps[:trainSize]
-testMapsX = maps[trainSize:]
-trainImagesX = images[:trainSize]
-testImagesX = images[trainSize:]
-trainY = labels[:trainSize]
-testY = labels[trainSize:]
-#validation split
-testDataSize = len(testMapsX)
-testSize = int(testDataSize*0.75)
-valMapsX = testMapsX[:testSize]
-testMapsX = testMapsX[testSize:]
-valImagesX = testImagesX[:testSize]
-testImagesX = testImagesX[testSize:]
-valY = testY[:testSize]
-testY = testY[testSize:]
-
-
-#split = train_test_split(maps, images, labels, test_size=0.25, random_state=42)
-#(trainMapsX, testMapsX, trainImagesX, testImagesX, trainY, testY) = split
-
-#split test data to test and validation
-#validation_split = train_test_split(testMapsX, testImagesX, testY, test_size=0.25, random_state=42)
-#(testMapsX, valMapsX, testImagesX, valImagesX, testY, valY) = validation_split
+seed = 10
+datasetbuilder = DatasetBuilder()
+path = "../../etp_data/processed/fixation_df__40_subjects.pkl"
+stimType = "Face"
+stimName = "face_sub_dist_"
+maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(stimType, path)
+split = datasetbuilder.train_test_val_split_subjects_balnced(maps, images, labels, seed)
+trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY = split
 
 # create the two CNN models
-cnn_scanpath = cnn_multi_input.create_cnn(stim.size[0], stim.size[1], 3, regress=False)
-cnn_image = cnn_multi_input.create_cnn(stim.size[0], stim.size[1], 3, regress=False)
+cnn_scanpath = cnn_multi_input.create_cnn(stim_size[0], stim_size[1], 3, regress=False)
+cnn_image = cnn_multi_input.create_cnn(stim_size[0], stim_size[1], 3, regress=False)
 
 # create the input to our final set of layers as the *output* of both CNNs
 combinedInput = concatenate([cnn_scanpath.output, cnn_image.output])
@@ -108,12 +50,16 @@ model = Model(inputs=[cnn_scanpath.input, cnn_image.input], outputs=x)
 opt = Adam(lr=1e-3, decay=1e-3 / 200)
 model.compile(loss='binary_crossentropy', optimizer=opt,  metrics=['accuracy'])
 
+# shuffle data
+trainMapsX, trainImagesX, trainY = shuffle(trainMapsX, trainImagesX, trainY, random_state=seed)
+valMapsX, valImagesX, valY = shuffle(valMapsX, valImagesX, valY, random_state=seed)
+
 # train the model
 print("[INFO] training model...")
 history = model.fit(
 	[trainMapsX, trainImagesX], trainY,
 	validation_data=([valMapsX, valImagesX], valY),
-	epochs=100, batch_size=16)
+	epochs=30, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy
@@ -136,6 +82,9 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 fig.savefig("../../etp_data/processed/figs/" + stimName + "train_val_loss.pdf", bbox_inches='tight')
 plt.show()
+
+# shuffle data
+testMapsX, testImagesX, testY = shuffle(testMapsX, testImagesX, testY, random_state=seed)
 
 #model evaluate
 results = model.evaluate([testMapsX, testImagesX], testY, batch_size=128)

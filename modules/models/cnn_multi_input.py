@@ -82,29 +82,4 @@ def create_vggNet(width, height, depth):
 
 	return model
 
-
-"""
-def two_concat_cnn(activation='relu'):
-
-    # Defining input 1
-    input1 = Embedding(SAMPLE_SIZE, EMBEDDING_DIMS, input_length=MAX_SMI_LEN)
-    x1 = Dropout(0.2)(input)
-    x1 = Conv1D(NUM_FILTERS, FILTER_LENGTH, padding='valid', activation=activation, strides=1)(x1)
-    x1 = GlobalMaxPooling1D()(x1)
-
-    # Defining input 2
-    input2 = Embedding(SAMPLE_SIZE, EMBEDDING_DIMS, input_length=MAX_SMI_LEN)
-    x2 = Dropout(0.2)(input)
-    x2 = Conv1D(NUM_FILTERS, FILTER_LENGTH, padding='valid', activation=activation, strides=1)(x2)
-    x2 = GlobalMaxPooling1D()(x2)
-
-    # Merging subnetworks
-    x = concatenate([input1, input2])
-
-    # Final Dense layer and compilation
-    x = Dense(1, activation='sigmoid')
-    model = Model(inputs=[input1, input2], x)
-    model.compile(loss='binary_crossentropy', optimizer='adam',  metrics=['accuracy'])
-
-    return model
-"""
+def lstm():
