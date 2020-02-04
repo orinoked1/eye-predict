@@ -293,7 +293,7 @@ class DatasetBuilder(object):
         return trainPatchesX, valPatchesX, testPatchesX, trainY, valY, testY
 
 
-    def create_patches_dataset(self, scanpaths, images, labels, patch_size, stim_size):
+    def create_patches_dataset(self, scanpaths, images, labels, patch_size, saliency):
         print("Log.....Building patches")
         df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
         df['scanpath_len'] = 0
@@ -304,6 +304,14 @@ class DatasetBuilder(object):
         df = df.reset_index()
         patches_list = []
         for scanpath, img in zip(df.scanpath, df.img):
+            scipy.misc.imsave("../../etp_data/processed/patches/" + "original_img.jpg", img)
+            if saliency:
+                # initialize OpenCV's static saliency spectral residual detector and
+                # compute the saliency map
+                saliency = cv2.saliency.StaticSaliencyFineGrained_create()
+                (success, img) = saliency.computeSaliency(img)
+                img = (img * 255).astype("uint8")
+                #scipy.misc.imsave("../../etp_data/processed/patches/" + "saliency_img.jpg", img)
             # Compute clusters Means through time
             fixations_centers = []
             clusters = np.array_split(scanpath, 50)
@@ -313,9 +321,7 @@ class DatasetBuilder(object):
             #build patches around the fixations_centers
             patches = []
             patch_num = 1
-            #scipy.misc.imsave("../../etp_data/processed/patches/" + "original_img.jpg", img)
             #DataVis.scanpath_by_img("../../etp_data/processed/patches/", scanpath, stim_size, img, False)
-            #scipy.misc.imsave("../../etp_data/processed/patches/" + "pad_img.jpg", img)
             for xi, yi in fixations_centers:
                 length = int(patch_size/2)
                 patch = img[yi - length: yi + length, xi - length: xi + length]

@@ -18,7 +18,12 @@ stimType = "Face"
 stimName = "face_lstm"
 scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(stimType, path)
 patch_size = 60
-df = datasetbuilder.create_patches_dataset(scanpaths, images, labels, patch_size, stim_size)
+saliency=False
+if saliency:
+    channel = 1
+else:
+    channel = 3
+df = datasetbuilder.create_patches_dataset(scanpaths, images, labels, patch_size, saliency)
 split = datasetbuilder.train_test_val_split_subjects_balnced_for_lstm(df, seed)
 trainPatchesX, valPatchesX, testPatchesX, trainY, valY, testY = split
 
@@ -27,12 +32,12 @@ trainPatchesX, valPatchesX, testPatchesX, trainY, valY, testY = split
 # fix random seed for reproducibility
 numpy.random.seed(seed)
 # define CNN model
-cnn = cnn_multi_input.create_cnn(patch_size, patch_size, 3, regress=False)
+cnn = cnn_multi_input.create_cnn(patch_size, patch_size, channel, regress=False)
 # define time distributer
 # define LSTM model
 model = Sequential()
-model.add(TimeDistributed(cnn, input_shape=(50, patch_size, patch_size, 3)))
-model.add(LSTM(100, activation='relu', return_sequences=False))
+model.add(TimeDistributed(cnn, input_shape=(50, patch_size, patch_size, channel)))
+model.add(LSTM(10, activation='relu', return_sequences=False))
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -43,9 +48,11 @@ valPatchesX, valY = shuffle(valPatchesX,  valY, random_state=seed)
 
 # train the model
 print("[INFO] training model...")
+if saliency:
+    trainPatchesX = numpy.reshape(trainPatchesX, (trainPatchesX.shape, -1))
 history = model.fit(trainPatchesX, trainY,
 	validation_data=(valPatchesX, valY),
-	epochs=100, batch_size=16)
+	epochs=10, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy
