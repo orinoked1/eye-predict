@@ -278,9 +278,9 @@ class DatasetBuilder(object):
                 valset = pd.concat([valset, val])
                 testset = pd.concat([testset, test])
 
-        print("train", trainset.binary_bid.value_counts())
-        print("val", valset.binary_bid.value_counts())
-        print("test", testset.binary_bid.value_counts())
+        #print("train", trainset.binary_bid.value_counts())
+        #print("val", valset.binary_bid.value_counts())
+        #print("test", testset.binary_bid.value_counts())
 
         print("Building train, val, test datasets...")
         trainPatchesX = np.asanyarray(trainset.patch.tolist())
@@ -323,6 +323,7 @@ class DatasetBuilder(object):
                 pady = 60 - patch.shape[1]
                 patch = cv2.copyMakeBorder(patch, 0, padx, 0, pady, cv2.BORDER_CONSTANT)
                 #scipy.misc.imsave("../../etp_data/processed/patches/" + str(patch_num) + "_patch_ORG.jpg", patch)
+                patch = patch/255
                 patches.append(patch)
                 patch_num += 1
             patches_list.append(np.asanyarray(patches))
