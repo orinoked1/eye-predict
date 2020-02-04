@@ -83,3 +83,4 @@ def create_vggNet(width, height, depth):
 	return model
 
 def lstm():
+	return

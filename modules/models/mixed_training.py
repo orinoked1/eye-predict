@@ -1,22 +1,16 @@
 # USAGE
 # python mixed_training.py
 
-# import the necessary packages
 from modules.models import cnn_multi_input
 from modules.data.datasets import DatasetBuilder
-from modules.data.stim import Stim
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
-import yaml
 from sklearn.utils import shuffle
 from keras.layers.core import Dense
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.layers import concatenate
-import numpy as np
-import pandas as pd
-import scipy.misc
 
 
 seed = 10
@@ -25,7 +19,8 @@ path = "../../etp_data/processed/fixation_df__40_subjects.pkl"
 stimType = "Face"
 stimName = "face_sub_dist_"
 maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(stimType, path)
-split = datasetbuilder.train_test_val_split_subjects_balnced(maps, images, labels, seed)
+df = maps.merge(images, on='sampleId').merge(labels, on='sampleId')
+split = datasetbuilder.train_test_val_split_subjects_balnced(df, seed)
 trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY = split
 
 # create the two CNN models

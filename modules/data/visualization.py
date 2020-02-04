@@ -100,6 +100,51 @@ class DataVis(object):
 
         return
 
+    @staticmethod
+    def scanpath_by_img(path, SCANPATH, imgToPlot_size, stimulus, putNumbers=True, putLines=True, animation=True):
+
+        """ This functions uses cv2 standard library to visualize the scanpath
+            of a specified stimulus.
+            It is possible to visualize it as an animation by setting the additional
+            argument animation=True.
+           """
+
+        scanpath = SCANPATH
+
+        # toPlot = [cv2.resize(stimulus, (520, 690)),] # look, it is a list!
+        toPlot = [cv2.resize(stimulus, imgToPlot_size)]  # look, it is a list!
+
+        for i in range(np.shape(scanpath)[0]):
+
+            fixation = scanpath[i].astype(int)
+
+            frame = np.copy(toPlot[-1]).astype(np.uint8)
+
+            cv2.circle(frame,
+                       (fixation[0], fixation[1]),
+                       5, (0, 0, 0), 1)
+            if putNumbers:
+                cv2.putText(frame, str(i + 1),
+                            (fixation[0], fixation[1]),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            1, (0, 0, 255), thickness=2)
+            if putLines and i > 0:
+                prec_fixation = scanpath[i - 1].astype(int)
+                cv2.line(frame, (prec_fixation[0], prec_fixation[1]), (fixation[0], fixation[1]), (0, 0, 255),
+                         thickness=1, lineType=8, shift=0)
+
+            # if animation is required, frames are attached in a sequence
+            # if not animation is required, older frames are removed
+            toPlot.append(frame)
+            if not animation: toPlot.pop(0)
+
+        for i in range(len(toPlot)):
+            if (i % 50) == 0:
+                figName = str(i) + '_scanPathEX.jpg'
+                scipy.misc.imsave(path + figName, toPlot[i])
+
+        return
+
     def visualize(self, fixation_df, scanpath_df):
 
         fixation_specific_stim_df = fixation_df[fixation_df['stimType'] == self.stim.name]
