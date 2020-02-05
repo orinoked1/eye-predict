@@ -11,11 +11,11 @@ from sklearn.metrics import auc
 from matplotlib import pyplot as plt
 
 
-seed = 10
+seed = 33
 datasetbuilder = DatasetBuilder()
 path = "../../etp_data/processed/scanpath_df__40_subjects.pkl"
 stimType = "Face"
-stimName = "face_lstm"
+stimName = "face_lstm_3_seed_33"
 scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(stimType, path)
 patch_size = 60
 saliency=False
@@ -42,6 +42,8 @@ model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+print(model.summary())
+
 # shuffle data
 trainPatchesX, trainY = shuffle(trainPatchesX, trainY, random_state=seed)
 valPatchesX, valY = shuffle(valPatchesX,  valY, random_state=seed)
@@ -52,7 +54,7 @@ if saliency:
     trainPatchesX = numpy.reshape(trainPatchesX, (trainPatchesX.shape, -1))
 history = model.fit(trainPatchesX, trainY,
 	validation_data=(valPatchesX, valY),
-	epochs=10, batch_size=16)
+	epochs=20, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy
