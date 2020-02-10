@@ -203,7 +203,7 @@ class DatasetBuilder(object):
 
         return scanpaths, images, labels, stim_size
 
-    def train_test_val_split_subjects_balnced(self, df, seed):
+    def train_test_val_split_subjects_balnced(self, df, seed, is_patch):
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
         trainset = []
@@ -237,9 +237,14 @@ class DatasetBuilder(object):
         print("test", testset.binary_bid.value_counts())
 
         print("Building train, val, test datasets...")
-        trainMapsX = np.asanyarray(trainset.fixationMap.tolist())
-        valMapsX = np.asanyarray(valset.fixationMap.tolist())
-        testMapsX = np.asanyarray(testset.fixationMap.tolist())
+        if is_patch:
+            trainMapsX = np.asanyarray(trainset.patch.tolist())
+            valMapsX = np.asanyarray(valset.patch.tolist())
+            testMapsX = np.asanyarray(testset.patch.tolist())
+        else:
+            trainMapsX = np.asanyarray(trainset.fixationMap.tolist())
+            valMapsX = np.asanyarray(valset.fixationMap.tolist())
+            testMapsX = np.asanyarray(testset.fixationMap.tolist())
         trainImagesX = np.asanyarray(trainset.img.tolist())
         valImagesX = np.asanyarray(valset.img.tolist())
         testImagesX = np.asanyarray(testset.img.tolist())
@@ -330,11 +335,13 @@ class DatasetBuilder(object):
                 patch = cv2.copyMakeBorder(patch, 0, padx, 0, pady, cv2.BORDER_CONSTANT)
                 #scipy.misc.imsave("../../etp_data/processed/patches/" + str(patch_num) + "_patch_ORG.jpg", patch)
                 patch = patch/255
+                patch = patch[:, :, np.newaxis]
                 patches.append(patch)
                 patch_num += 1
             patches_list.append(np.asanyarray(patches))
+            img = (img / 255).astype("uint8")
 
         df["patch"] = patches_list
-        df = df[["sampleId", "patch", "binary_bid"]]
+        df = df[["sampleId", "patch", "img", "binary_bid"]]
 
         return df

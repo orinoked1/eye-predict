@@ -15,7 +15,7 @@ seed = 33
 datasetbuilder = DatasetBuilder()
 path = "../../etp_data/processed/scanpath_df__40_subjects.pkl"
 stimType = "Face"
-stimName = "face_lstm_3_seed_33"
+stimName = "face_lstm_4_seed_33"
 scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(stimType, path)
 patch_size = 60
 saliency=False
@@ -50,11 +50,9 @@ valPatchesX, valY = shuffle(valPatchesX,  valY, random_state=seed)
 
 # train the model
 print("[INFO] training model...")
-if saliency:
-    trainPatchesX = numpy.reshape(trainPatchesX, (trainPatchesX.shape, -1))
 history = model.fit(trainPatchesX, trainY,
 	validation_data=(valPatchesX, valY),
-	epochs=20, batch_size=16)
+	epochs=5, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy

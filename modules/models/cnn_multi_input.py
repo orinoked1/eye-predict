@@ -26,7 +26,7 @@ path = os.getcwd()
 use_gpu = tf.test.is_gpu_available()
 print("use GPU?:",use_gpu )
 
-def create_cnn(width, height, depth, filters=(16, 32), regress=False): #(16, 32, 64, 128)
+def create_cnn(width, height, depth, filters=(16, 32, 64), regress=False): #(16, 32, 64, 128)
 	# initialize the input shape and channel dimension, assuming
 	# TensorFlow/channels-last ordering
 	inputShape = (height, width, depth)
@@ -57,8 +57,8 @@ def create_cnn(width, height, depth, filters=(16, 32), regress=False): #(16, 32,
 
 	# apply another FC layer, this one to match the number of nodes
 	# coming out of the MLP
-	x = Dense(4)(x)
-	x = Activation("relu")(x)
+#	x = Dense(4)(x)
+#	x = Activation("relu")(x)
 
 	# check to see if the regression node should be added
 	if regress:
