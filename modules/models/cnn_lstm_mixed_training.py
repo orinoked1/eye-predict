@@ -36,7 +36,7 @@ cnn = cnn_multi_input.create_cnn(patch_size, patch_size, channel, regress=False)
 # define time distributer
 # define LSTM model
 model = Sequential()
-model.add(TimeDistributed(cnn, input_shape=(50, patch_size, patch_size, channel)))
+model.add(TimeDistributed(cnn, input_shape=(1, 50, patch_size, patch_size, channel)))
 model.add(LSTM(10, activation='relu', return_sequences=False))
 model.add(Dense(1, activation='sigmoid'))
 

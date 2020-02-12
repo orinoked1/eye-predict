@@ -163,6 +163,16 @@ class DatasetBuilder(object):
 
         return df[["sampleId", "binary_bid"]]
 
+    def find_sparse_samples(self, df, sparse_threshold):
+        df['scanpath_len'] = 0
+        for i in range(df.scanpath.size):
+            df.at[i, 'scanpath_len'] = len(df.scanpath[i])
+        # prepering the data
+        df = df[df.scanpath_len > sparse_threshold]  # > 85%
+        df = df.reset_index()
+
+        return df
+
     def load_fixations_related_datasets(self, stimType, path):
         print("Log.....Reading fixation data")
         fixation_df = pd.read_pickle(path)
@@ -301,6 +311,7 @@ class DatasetBuilder(object):
     def create_patches_dataset(self, scanpaths, images, labels, patch_size, saliency):
         print("Log.....Building patches")
         df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
+        df = self.find_sparse_samples(df, 2300)
         df['scanpath_len'] = 0
         for i in range(df.scanpath.size):
             df.at[i, 'scanpath_len'] = len(df.scanpath[i])

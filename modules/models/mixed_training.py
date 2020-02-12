@@ -13,14 +13,14 @@ from keras.optimizers import Adam
 from keras.layers import concatenate
 
 
-seed = 10
+seed = 30
 datasetbuilder = DatasetBuilder()
 path = "../../etp_data/processed/fixation_df__40_subjects.pkl"
 stimType = "Face"
 stimName = "face_sub_dist_"
 maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(stimType, path)
 df = maps.merge(images, on='sampleId').merge(labels, on='sampleId')
-split = datasetbuilder.train_test_val_split_subjects_balnced(df, seed)
+split = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, False)
 trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY = split
 
 # create the two CNN models
@@ -54,7 +54,7 @@ print("[INFO] training model...")
 history = model.fit(
 	[trainMapsX, trainImagesX], trainY,
 	validation_data=([valMapsX, valImagesX], valY),
-	epochs=30, batch_size=16)
+	epochs=10, batch_size=16)
 
 # plot metrics
 # summarize history for accuracy
