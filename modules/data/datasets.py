@@ -161,10 +161,9 @@ class DatasetBuilder(object):
         for i in range(df.scanpath.size):
             df.at[i, 'scanpath_len'] = len(df.scanpath[i])
         # prepering the data
-        df = df[df.scanpath_len > sparse_threshold]  # > 85%
-        df = df.reset_index()
+        sparse_indexes = df[df.scanpath_len > sparse_threshold].index()  # > 85%
 
-        return df
+        return sparse_indexes
 
     def load_fixations_related_datasets(self, stimType, path):
         print("Log.....Reading fixation data")
@@ -184,9 +183,9 @@ class DatasetBuilder(object):
 
         return maps, images, labels, stim_size
 
-    def load_scanpath_related_datasets(self, stimType, path):
+    def load_scanpath_related_datasets(self, scanpath_df, stimType):
         print("Log.....Reading scanpath data")
-        scanpath_df = pd.read_pickle(path)
+        scanpath_df = scanpath_df
         # choose stim to run on
         for stim in self.stims_array:
             if stim.name == stimType:
@@ -300,13 +299,10 @@ class DatasetBuilder(object):
     def create_patches_dataset(self, scanpaths, images, labels, patch_size, saliency):
         print("Log.....Building patches")
         df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
-        df = self.find_sparse_samples(df, 2300)
-        df['scanpath_len'] = 0
-        for i in range(df.scanpath.size):
-            df.at[i, 'scanpath_len'] = len(df.scanpath[i])
-        # prepering the data
-        df = df[df.scanpath_len > 2300]  # > 85%
-        df = df.reset_index()
+
+        sparse_indexes = self.find_sparse_samples(df, 2300)
+        df.drop(df.index[sparse_indexes], inplace=True)
+
         patches_list = []
         for scanpath, img in zip(df.scanpath, df.img):
             scipy.misc.imsave("../../etp_data/processed/patches/" + "original_img.jpg", img)
