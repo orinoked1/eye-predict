@@ -6,19 +6,21 @@ import scipy.misc
 
 class DataVis(object):
 
-    def __init__(self, stimpath, vispath, stimarray, stiminx):
+    def __init__(self, stimpath, vispath, stimarray, stimType):
         self.stimarray = stimarray
-        self.stim = self.stimarray[stiminx]
+        for stim in self.stimarray:
+            if stim.name == stimType:
+                self.stim = stim
         self.stimpath = stimpath
         self.vispath = vispath
         self.currpath = os.getcwd()
 
     @staticmethod
-    def stimulus(DATASET_NAME, STIMULUS_NAME):
+    def stimulus(currpath, DATASET_NAME, STIMULUS_NAME):
 
         """ This functions returns the matrix of pixels of a specified stimulus.
             """
-        path = DATASET_NAME + STIMULUS_NAME
+        path = currpath + DATASET_NAME + STIMULUS_NAME
         image = cv2.imread(path, 1)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -41,7 +43,7 @@ class DataVis(object):
         This functions visualize a specified stimulus adding the fixation map on top.
         """
 
-        stimulus = self.stimulus(path, stimulus_name)
+        stimulus = self.stimulus(self.currpath, path, stimulus_name)
 
         toPlot = stimulus
         fixation_map = FIXATION_MAP
@@ -62,7 +64,7 @@ class DataVis(object):
             argument animation=True.
            """
 
-        stimulus = self.stimulus(path, stimulus_name)
+        stimulus = self.stimulus(self.currpath, path, stimulus_name)
 
         scanpath = SCANPATH
 

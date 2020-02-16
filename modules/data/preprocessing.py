@@ -5,7 +5,8 @@ import glob
 
 class DataPreprocess(object):
 
-    def __init__(self, both_eye_data_path, one_eye_data_path, trial_start_str, trial_end_str, output_file_both_eye, output_file_one_eye, stimarray):
+    def __init__(self, exp_name, both_eye_data_path, one_eye_data_path, trial_start_str, trial_end_str, output_file_both_eye, output_file_one_eye, stimarray):
+        self.exp_name = exp_name
         self.both_eye_data_path = both_eye_data_path
         self.one_eye_data_path = one_eye_data_path
         self.trial_start_str = trial_start_str
@@ -99,6 +100,10 @@ class DataPreprocess(object):
             #Rename columns
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
                                        'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'dominant_eye']
+        elif self.exp_name == 'weizmann':
+            # Rename columns if needed
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+                                       'runNum', 'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
         else:
             # Rename columns if needed
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
@@ -149,7 +154,7 @@ class DataPreprocess(object):
             # subjectId = txtData['subjectID'][0]
             print('Log.....Runing over all trials of subject id - ' + subjectIntId)
             # Run over all trials per user and merge the asc data with the txt data
-            for trial in range(trialCount):
+            for trial in range(5):
                 trial_str = 'Trial' + str(trial + 1).zfill(3)
                 indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
                                    ascDf[1].str.contains(trial_str, na=False)].index[0] + 1
@@ -186,6 +191,10 @@ class DataPreprocess(object):
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
                                        'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis',
                                        'avg_pupil_size', 'dominant_eye']
+        elif self.exp_name == 'weizmann':
+            # Rename columns if needed
+            allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
+                                       'runNum', 'timeStamp', 'X_axis', 'Y_axis', 'pupil_size', 'dominant_eye']
         else:
             # Rename columns if needed
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
@@ -207,6 +216,7 @@ class DataPreprocess(object):
 
     def data_tidying_for_dataset_building(self, df, screen_resolution):
         print('Log..... Data tidying')
+        flag = 0
         screen_resolution = [int(x) for x in screen_resolution.split(',')]
         # add 'sampleId' field for each uniqe sample
         df['sampleId'] = df['subjectID'].astype(str) + '_' + df['stimName'].astype(str)
@@ -224,37 +234,31 @@ class DataPreprocess(object):
         df.timeStamp = df.timeStamp.astype(int)
         df = df[df.bid != 999]
         df.reset_index(drop=True, inplace=True)
+        for stim in self.stimarray:
+            stim_id = int(stim.id)
+            stim_resolution = stim.size
+            min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+            # get only datapoints within stim boundaries
+            stimRegion = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
+                                    (df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+            # Shifting x,y datapoint to start from (0,0) point
+            stimRegion.X_axis = stimRegion.X_axis - min_x
+            stimRegion.Y_axis = stimRegion.Y_axis - min_y
 
-        # stim is snack
-        stim_id = int(self.stimarray[0].id)
-        stim_resolution = self.stimarray[0].size
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        stimARegionDataDf = df[((df['stimId'] == stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) &
-                                (df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
-        # Shifting x,y datapoint to start from (0,0) point
-        stimARegionDataDf.X_axis = stimARegionDataDf.X_axis - min_x
-        stimARegionDataDf.Y_axis = stimARegionDataDf.Y_axis - min_y
+            # Appending all stims to one DataFrame
+            if flag == 0:
+                byRegionDf = pd.DataFrame(columns=stimRegion.columns)
+                flag = 1
+            byRegionDf = pd.concat([byRegionDf, stimRegion])
 
-        # stim face
-        stim_resolution = self.stimarray[1].size
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        stimBRegionDataDf = df[((df['stimId'] != stim_id) & (df['X_axis'] >= min_x) & (df['X_axis'] <= max_x) & (
-                df['Y_axis'] >= min_y) & (df['Y_axis'] <= max_y)) == True]
+        byRegionDf.reset_index(drop=True, inplace=True)
+        byRegionDf.drop(byRegionDf.columns[[0]], axis=1, inplace=True)
 
-        # Shifting x,y datapoint to start from (0,0) point
-        stimBRegionDataDf.X_axis = stimBRegionDataDf.X_axis - min_x
-        stimBRegionDataDf.Y_axis = stimBRegionDataDf.Y_axis - min_y
-
-        byImgRegionDataDf = pd.concat([stimARegionDataDf, stimBRegionDataDf])
-        byImgRegionDataDf.reset_index(drop=True, inplace=True)
-        byImgRegionDataDf.drop(byImgRegionDataDf.columns[[0]], axis=1, inplace=True)
-
-        return byImgRegionDataDf
+        return byRegionDf
 
     def data_tidying_for_fixation_dataset_building(self, df, screen_resolution):
         print('Log..... Data tidying')
+        flag = 0
         screen_resolution = [int(x) for x in screen_resolution.split(',')]
         # Get relevant raw data for fixations and saccades
         df = df[df['action'].str.contains('EFIX', na=False)]
@@ -290,35 +294,32 @@ class DataPreprocess(object):
                     df.reset_index(drop=True, inplace=True)
 
 
-        # In this section for each stim (snack or face) get the datapoints within the stim boundaries
-        # For fixation dataset and for saccade dataset
-        # TODO: Create one function that gets for input the stim type and size
-        #  and outputs the DF with only datapoints within the stim region
+        # In this section for each stim get the datapoints within the stim boundaries
+        for stim in self.stimarray:
+            stim_id = stim.id
+            stim_resolution = (stim.size)
+            min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+            # get only datapoints within stim boundaries
+            stimRegion = df[
+                ((df['stimId'] == stim_id) & (df['avg_X_axis'] >= min_x) & (df['avg_X_axis'] <= max_x) &
+                 (df['avg_Y_axis'] >= min_y) & (df['avg_Y_axis'] <= max_y)) == True]
 
-        # FIXATION - stim is snack
-        stim_id = 2
-        stim_resolution = (self.stimarray[0].size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        FIXstimARegionDataDf = df[
-            ((df['stimId'] == stim_id) & (df['avg_X_axis'] >= min_x) & (df['avg_X_axis'] <= max_x) &
-             (df['avg_Y_axis'] >= min_y) & (df['avg_Y_axis'] <= max_y)) == True]
+            # Shifting x,y datapoint to start from (0,0) point
+            stimRegion.X_axis = stimRegion.X_axis - min_x
+            stimRegion.Y_axis = stimRegion.Y_axis - min_y
 
-        # FIXATION - stim face
-        stim_resolution = (self.stimarray[1].size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        FIXstimBRegionDataDf = df[
-            (((df['stimId'] != stim_id) & (df['avg_X_axis'] >= min_x) & (df['avg_X_axis'] <= max_x) & (
-                    df['avg_Y_axis'] >= min_y) & (df['avg_Y_axis'] <= max_y)) == True)]
+            # Appending all stims to one DataFrame
+            if flag == 0:
+                byRegionDf = pd.DataFrame(columns=stimRegion.columns)
+                flag = 1
+            byRegionDf = pd.concat([byRegionDf, stimRegion])
 
-        FIXbyImgRegionDataDf = pd.concat([FIXstimARegionDataDf, FIXstimBRegionDataDf])
-        FIXbyImgRegionDataDf.reset_index(drop=True, inplace=True)
+        byRegionDf.reset_index(drop=True, inplace=True)
+        byRegionDf.drop(byRegionDf.columns[[0]], axis=1, inplace=True)
 
+        return byRegionDf
 
-        return FIXbyImgRegionDataDf
-
-    def data_tidying_for_analysis(self, df, screen_resolution, snack_stim_size, face_stim_size):
+    def data_tidying_for_analysis_fix_sacc(self, df, screen_resolution):
         print('Log..... Data tidying')
 
         # Get relevant raw data for fixations and saccades
@@ -380,11 +381,55 @@ class DataPreprocess(object):
                 sacc_df[field] = sacc_df[field].astype(int)
                 sacc_df.reset_index(drop=True, inplace=True)
 
-        # In this section for each stim (snack or face) get the datapoints within the stim boundaries
-        # For fixation dataset and for saccade dataset
-        # TODO: Create one function that gets for input the stim type and size
-        #  and outputs the DF with only datapoints within the stim region
+        # In this section for each stim get the datapoints within the stim boundaries
+        # For fixation dataset
+        flag = 0
+        for stim in self.stimarray:
+            stim_id = stim.id
+            stim_resolution = (stim.size)
+            min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+            # get only datapoints within stim boundaries
+            stimRegion_fix_df = fix_df[
+                ((fix_df['stimId'] == stim_id) & (fix_df['avg_X_axis'] >= min_x) & (fix_df['avg_X_axis'] <= max_x) &
+                 (fix_df['avg_Y_axis'] >= min_y) & (fix_df['avg_Y_axis'] <= max_y)) == True]
 
+            # Shifting x,y datapoint to start from (0,0) point
+            stimRegion_fix_df.X_axis = stimRegion_fix_df.X_axis - min_x
+            byRegion_fix_Df.Y_axis = stimRegion_fix_df.Y_axis - min_y
+
+            # Appending all stims to one DataFrame
+            if flag == 0:
+                byRegion_fix_Df = pd.DataFrame(columns=stimRegion_fix_df.columns)
+                flag = 1
+            byRegion_fix_Df = pd.concat([byRegion_fix_Df, stimRegion_fix_df])
+
+        byRegion_fix_Df.reset_index(drop=True, inplace=True)
+        byRegion_fix_Df.drop(byRegion_fix_Df.columns[[0]], axis=1, inplace=True)
+
+        #for saccade dataset
+        flag = 0
+        for stim in self.stimarray:
+            stim_id = stim.id
+            stim_resolution = (stim.size)
+            min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
+            # get only datapoints within stim boundaries
+            stimRegion_sacc_df = sacc_df[
+                ((sacc_df['stimId'] == stim_id) & (sacc_df['S_X_axis'] >= min_x) & (sacc_df['S_X_axis'] <= max_x) &
+                 (sacc_df['S_Y_axis'] >= min_y) & (sacc_df['S_Y_axis'] <= max_y) & (sacc_df['E_X_axis'] >= min_x) & (
+                         sacc_df['E_X_axis'] <= max_x) &
+                 (sacc_df['E_Y_axis'] >= min_y) & (sacc_df['E_Y_axis'] <= max_y)) == True]
+            # Appending all stims to one DataFrame
+            if flag == 0:
+                byRegion_sacc_Df = pd.DataFrame(columns=stimRegion_sacc_df.columns)
+                flag = 1
+            byRegion_sacc_Df = pd.concat([byRegion_sacc_Df, stimRegion_sacc_df])
+
+        byRegion_sacc_Df.reset_index(drop=True, inplace=True)
+        byRegion_sacc_Df.drop(byRegion_sacc_Df.columns[[0]], axis=1, inplace=True)
+
+        return byRegion_fix_Df, byRegion_sacc_Df
+
+        """
         # FIXATION - stim is snack
         stim_id = 2
         stim_resolution = (snack_stim_size)
@@ -433,3 +478,4 @@ class DataPreprocess(object):
         SACCbyImgRegionDataDf.reset_index(drop=True, inplace=True)
 
         return FIXbyImgRegionDataDf, SACCbyImgRegionDataDf, fix_df_unique_after, sacc_df_unique_after
+        """

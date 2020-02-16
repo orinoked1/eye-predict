@@ -20,6 +20,6 @@ fixation_df = pd.read_pickle(path + "/etp_data/processed/fixation_df__40_subject
 print("Log.....Reading Scanpath data")
 scanpath_df = pd.read_pickle(path + "/etp_data/processed/scanpath_df__40_subjects.pkl")
 
-datavis = DataVis(cfg['exp']['etp']['stim_path'], cfg['exp']['etp']['visualization_path'], [stimSnack, stimFace], 1)
+datavis = DataVis(cfg['exp']['etp']['stim_path'], cfg['exp']['etp']['visualization_path'], [stimSnack, stimFace], "Face")
 
 datavis.visualize(fixation_df, scanpath_df)

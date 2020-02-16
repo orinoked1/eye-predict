@@ -20,6 +20,21 @@ exp:
       size: 480,600
     screen_resolution: 1080,1920
 
+  weizmann:
+    name: weizmann
+    both_eye_path: /weizmann/output
+    one_eye_path1: /weizmann/output
+    stim_path: /weizmann/stim/
+    visualization_path: /weizmann/visualized_data/
+    trial_start_str: TrialStart
+    trial_end_str: ScaleStart
+    output_file_both_eye: /weizmann/processed/pailot_data.csv
+    output_file_one_eye1: /weizmann/processed/pailot_data.csv
+    stimFood:
+      name: full_run
+      id: 1
+      size: 576,432
+
   test:
     name: my_data_test
     both_eye_path: /my_data_test/output_both_eye

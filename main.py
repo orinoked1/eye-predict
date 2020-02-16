@@ -15,7 +15,8 @@ with open(path + expconfig, 'r') as ymlfile:
 
 stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'], cfg['exp']['etp']['stimSnack']['size'])
 stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'], cfg['exp']['etp']['stimFace']['size'])
-data = DataPreprocess(cfg['exp']['etp']['both_eye_path'],
+data = DataPreprocess(cfg['exp']['etp']['name'],
+                      cfg['exp']['etp']['both_eye_path'],
                       cfg['exp']['etp']['one_eye_path1'],
                       cfg['exp']['etp']['trial_start_str'],
                       cfg['exp']['etp']['trial_end_str'],

@@ -15,14 +15,8 @@ from sklearn.cluster import KMeans
 
 class DatasetBuilder(object):
 
-    def __init__(self):
-        expconfig = "../config/experimentconfig.yaml"
-        with open(expconfig, 'r') as ymlfile:
-            cfg = yaml.load(ymlfile)
-        self.stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'],
-                         cfg['exp']['etp']['stimSnack']['size'])
-        self.stimFace = Stim(cfg['exp']['etp']['stimFace']['name'], cfg['exp']['etp']['stimFace']['id'],
-                        cfg['exp']['etp']['stimFace']['size'])
+    def __init__(self, stims_array):
+        self.stims_array = stims_array
 
     def get_fixation_dataset(self, data_df):
         print('Log..... Build fixation dataset')
@@ -33,10 +27,9 @@ class DatasetBuilder(object):
             stimName = data_df[data_df['sampleId'] == sampleId].stimName.unique()
             stimType = data_df[data_df['sampleId'] == sampleId].stimType.unique()
             sample = data_df[data_df['sampleId'] == sampleId].sampleId.unique()
-            if stimType == 'Snack':
-                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimSnack)
-            else:
-                fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, self.stimFace)
+            for stim in self.stims_array:
+                if stim.name == stimType:
+                    fixationMap = self.data_to_fixation_map_by_sampleId(data_df, sampleId, stim)
 
             if type(fixationMap) is not np.ndarray:
                 continue
@@ -176,16 +169,14 @@ class DatasetBuilder(object):
     def load_fixations_related_datasets(self, stimType, path):
         print("Log.....Reading fixation data")
         fixation_df = pd.read_pickle(path)
-        # choose stim to run on - Face or Snack
-        if stimType == "Face":
-            stim = self.stimFace
-            stimName = "face_imagenet_"
-        else:
-            stim = self.stimSnack
-            stimName = "snack_imagenet_"
-        fixation_df_by_stim = fixation_df[fixation_df['stimType'] == stim.name]
+        # choose stim to run on
+        for stim in self.stims_array:
+            if stim.name == stimType:
+                stim_name = stim.name
+                stim_size = stim.size
+        fixation_df_by_stim = fixation_df[fixation_df['stimType'] == stim_name]
         fixation_df_by_stim.reset_index(inplace=True)
-        stim_size = (stim.size[0], stim.size[1])
+        stim_size = (stim_size[0], stim_size[1])
 
         maps = self.load_fixation_maps_dataset(fixation_df_by_stim)
         images = self.load_images_dataset(fixation_df_by_stim, stim_size)
@@ -196,16 +187,14 @@ class DatasetBuilder(object):
     def load_scanpath_related_datasets(self, stimType, path):
         print("Log.....Reading scanpath data")
         scanpath_df = pd.read_pickle(path)
-        # choose stim to run on - Face or Snack
-        if stimType == "Face":
-            stim = self.stimFace
-            stimName = "face_imagenet_"
-        else:
-            stim = self.stimSnack
-            stimName = "snack_imagenet_"
-        scanpath_df_by_stim = scanpath_df[scanpath_df['stimType'] == stim.name]
+        # choose stim to run on
+        for stim in self.stims_array:
+            if stim.name == stimType:
+                stim_name = stim.name
+                stim_size = stim.size
+        scanpath_df_by_stim = scanpath_df[scanpath_df['stimType'] == stim_name]
         scanpath_df_by_stim.reset_index(inplace=True)
-        stim_size = (stim.size[0], stim.size[1])
+        stim_size = (stim_size[0], stim_size[1])
 
         scanpaths = self.load_scanpath_dataset(scanpath_df_by_stim)
         images = self.load_images_for_scanpath_dataset(scanpath_df_by_stim, stim_size)
