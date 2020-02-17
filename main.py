@@ -139,7 +139,7 @@ def cnn_multi_input_model_run(stimArray, fixation_df):
     is_simple_lstm = False
     saliency = False
     currpath = os.getcwd()
-    run_name = "_simple_lstm_run_1_" + stimType
+    run_name = "_cnn_multi_input_run_1_" + stimType
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
                                                                                          stimType)
