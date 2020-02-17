@@ -10,9 +10,8 @@ from keras.models import Model
 import pandas as pd
 
 
-
 # CNN multi input
-class CnnMultiInput(object):
+class CnnMultiInput:
     def __init__(self, seed, dataset, saliency, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)

@@ -189,8 +189,9 @@ def svm_run(stimArray, scanpath_df):
     # Build train and evaluate model
     svm.run_model()
 
-stimArray, scanpath_df, fixation_df = get_datasets()
-cnn_multi_input_model_run(stimArray, fixation_df)
-#simple_lstm_model_run(stimArray, scanpath_df)
-#cnn_lstm_model_run(stimArray, scanpath_df)
-#svm_run(stimArray, scanpath_df)
+if __name__ == '__main__':
+    stimArray, scanpath_df, fixation_df = get_datasets()
+    cnn_multi_input_model_run(stimArray, fixation_df)
+    #simple_lstm_model_run(stimArray, scanpath_df)
+    #cnn_lstm_model_run(stimArray, scanpath_df)
+    #svm_run(stimArray, scanpath_df)

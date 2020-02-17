@@ -4,7 +4,7 @@ from sklearn import svm
 import numpy
 
 
-class SVM(object):
+class SVM:
     def __init__(self, seed, df, run_name):
         # fix random seed for reproducibility
         numpy.random.seed(seed)

@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 import os
 import scipy.misc
-#from heatmappy import Heatmapper
 
-class DataVis(object):
+
+class DataVis:
 
     def __init__(self, stimpath, vispath, stimarray, stimType):
         self.stimarray = stimarray

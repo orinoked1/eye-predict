@@ -10,9 +10,8 @@ from sklearn.metrics import auc
 from matplotlib import pyplot as plt
 
 
-
 # CNN LSTM for sequence classification
-class CnnLstm(object):
+class CnnLstm:
     def __init__(self, seed, dataset, saliency, patch_size, run_name):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
