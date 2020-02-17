@@ -1,7 +1,5 @@
 import numpy
 from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import TimeDistributed
 from modules.models import cnn
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
@@ -9,6 +7,7 @@ from sklearn.metrics import auc
 from matplotlib import pyplot as plt
 from keras.layers import concatenate
 from keras.models import Model
+import pandas as pd
 
 
 
@@ -114,3 +113,9 @@ class CnnMultiInput(object):
         plt.legend(loc='best')
         fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "roc.pdf", bbox_inches='tight')
         plt.show()
+
+        results_list = []
+        results_list.append(results)
+        results_list.append(auc_keras)
+        results_df = pd.DataFrame(results_list)
+        results_df.to_csv("cnn_multi_input_results_df.csv")
