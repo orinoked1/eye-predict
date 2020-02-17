@@ -1,19 +1,21 @@
 import numpy
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import TimeDistributed
 from modules.models import cnn
-from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
-from keras.layers import concatenate
+from sklearn.utils import shuffle
+from keras.layers.core import Dense
+from keras.layers.convolutional import MaxPooling2D
+from keras.layers.core import Flatten
+from keras.layers.convolutional import Conv2D
 from keras.models import Model
+from keras.layers import concatenate
+from keras.layers.core import Dropout
 
 
 
 # CNN multi input
-class CnnMultiInput(object):
+class CnnMultiInputVGGNet(object):
     def __init__(self, seed, dataset, saliency, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
@@ -33,20 +35,35 @@ class CnnMultiInput(object):
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
-        cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
+        vgg_map_model = cnn.create_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
+        vgg_image_model = cnn.create_vggNet(self.stimSize[0],self.stimSize[1], self.channel)
+
+        for layer in vgg_map_model.layers:
+            layer.name = layer.name + str("_map")
+        # layer.trainable = False
+
+        for layer in vgg_image_model.layers:
+            layer.name = layer.name + str("_image")
+            layer.trainable = False
 
         # create the input to our final set of layers as the *output* of both CNNs
-        combinedInput = concatenate([cnn_map.output, cnn_image.output])
+        combinedInput = concatenate([vgg_map_model.output, vgg_image_model.output])
 
-        # our final FC layer head will have two dense layers, the final one
-        # being our regression head
-        x = Dense(4, activation="relu")(combinedInput)
-        x = Dense(1, activation="sigmoid")(x)
+        # Stacking a new simple convolutional network on top of it
+        x = Conv2D(filters=64, kernel_size=(3, 3), activation='relu')(combinedInput)
+        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = Flatten()(x)
+        x = Dense(256, activation='relu')(x)
+        x = Dropout(0.5)(x)
+        x = Dense(1, activation='sigmoid')(x)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
-        self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
+        model = Model(inputs=[vgg_map_model.input, vgg_image_model.input], outputs=x)
+        print(model.summary())
+
+        for layer in model.layers:
+            print(layer.name)
 
         self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 

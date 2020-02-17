@@ -12,12 +12,12 @@ from keras.models import Model
 
 
 
-# CNN multi input
-class CnnMultiInput(object):
-    def __init__(self, seed, dataset, saliency, run_name, stim_size):
+# CNN LSTM image concatenation for sequence classification
+class CnnLstmImgConcat(object):
+    def __init__(self, seed, dataset, saliency, patch_size, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
-        self.trainMapsX, self.valMapsX, self.testMapsX, \
+        self.trainPatchesX, self.valPatchesX, self.testPatchesX, \
         self.trainImagesX, self.valImagesX, self.testImagesX, self.trainY, self.valY, self.testY = dataset
         self.model = None
         self.history = None
@@ -25,6 +25,7 @@ class CnnMultiInput(object):
             self.channel = 1
         else:
             self.channel = 3
+        self.patch_size = patch_size
         self.run_name = run_name
         self.seed = seed
         self.batch_size = 16
@@ -33,20 +34,21 @@ class CnnMultiInput(object):
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
+        cnn_patchscan = cnn.create_cnn(self.patch_size, self.patch_size, self.channel, regress=False)
         cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
 
         # create the input to our final set of layers as the *output* of both CNNs
-        combinedInput = concatenate([cnn_map.output, cnn_image.output])
+        combinedInput = concatenate([cnn_patchscan.output, cnn_image.output])
 
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
-        x = Dense(4, activation="relu")(combinedInput)
+        x = TimeDistributed(Dense(4, activation="relu"), input_shape=(50, 32))(combinedInput)
+        x = LSTM(10, activation='relu', return_sequences=False)(x)
         x = Dense(1, activation="sigmoid")(x)
 
-        # our final model will accept fixation map on one CNN
+        # our final model will accept scanpth on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
-        self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
+        self.model = Model(inputs=[cnn_patchscan.input, cnn_image.input], outputs=x)
 
         self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
@@ -56,14 +58,14 @@ class CnnMultiInput(object):
 
     def train_model(self):
         # shuffle data
-        trainMapsX, trainImagesX, trainY = shuffle(self.trainMapsX, self.trainImagesX, self.trainY, random_state=self.seed)
-        valMapsX, valImagesX, valY = shuffle(self.valMapsX, self.valImagesX, self.valY, random_state=self.seed)
+        trainPatchesX, trainImagesX, trainY = shuffle(self.trainPatchesX, self.trainImagesX, self.trainY, random_state=self.seed)
+        valPatchesX, valImagesX, valY = shuffle(self.valPatchesX, self.valImagesX, self.valY, random_state=self.seed)
 
         # train the model
         print("[INFO] training model...")
         self.history = self.model.fit(
-            [trainMapsX, trainImagesX], trainY,
-            validation_data=([valMapsX, valImagesX], valY),
+            [trainPatchesX, trainImagesX], trainY,
+            validation_data=([valPatchesX, valImagesX], valY),
             epochs=self.num_epochs, batch_size=self.batch_size)
 
 
@@ -91,15 +93,15 @@ class CnnMultiInput(object):
         plt.show()
 
         # shuffle data
-        testMapsX, testImagesX, testY = shuffle(self.testMapsX, self.testImagesX, self.testY, random_state=self.seed)
+        testPatchesX, testImagesX, testY = shuffle(self.testPatchesX, self.testImagesX, self.testY, random_state=self.seed)
         # shuffle data
         # testPatchesX, testY = shuffle(testPatchesX, testY, random_state=seed)
 
         # model evaluate
-        results = self.model.evaluate([testMapsX, testImagesX], testY, batch_size=self.batch_size)
+        results = self.model.evaluate([testPatchesX, testImagesX], testY, batch_size=128)
         print('test loss, test acc:', results)
         # make predictions on the testing data
-        predY = self.model.predict([testMapsX, testImagesX]).ravel()
+        predY = self.model.predict([testPatchesX, testImagesX]).ravel()
         fpr_keras, tpr_keras, thresholds_keras = roc_curve(testY, predY)
 
         auc_keras = auc(fpr_keras, tpr_keras)

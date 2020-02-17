@@ -1,16 +1,9 @@
 import numpy as np
 import cv2
-import os
-from eye_tracking_data_parser import raw_data_preprocess as parser
-from sklearn.utils import shuffle
 import pandas as pd
 from modules.data.visualization import DataVis
-import pickle
-import yaml
-from modules.data.stim import Stim
 from sklearn.utils import shuffle
 import scipy.misc
-from sklearn.cluster import KMeans
 
 
 class DatasetBuilder(object):
@@ -116,12 +109,12 @@ class DatasetBuilder(object):
         print("Log.....Loading scanpaths")
         return df[["sampleId", "scanpath"]]
 
-    def load_images_dataset(self, df, img_size):
+    def load_images_dataset(self, currpath, df, img_size):
         print("Log.....Loading images")
         img_dict = {}
         for image in np.asanyarray(df.stimName.unique()):
             print("loading image - " + image)
-            img = DataVis.stimulus("../../etp_data/Stim_0/", image)
+            img = DataVis.stimulus(currpath, "/etp_data/Stim_0/", image)
             img = cv2.resize(img, img_size)
             img = img / 255
             img_dict[image] = img
@@ -133,12 +126,12 @@ class DatasetBuilder(object):
 
         return newdf[["sampleId", "img"]]
 
-    def load_images_for_scanpath_dataset(self, df, img_size):
+    def load_images_for_scanpath_dataset(self, currpath, df, img_size):
         print("Log.....Loading images")
         img_dict = {}
         for image in np.asanyarray(df.stimName.unique()):
             print("loading image - " + image)
-            img = DataVis.stimulus("../../etp_data/Stim_0/", image)
+            img = DataVis.stimulus(currpath, "/etp_data/Stim_0/", image)
             img = cv2.resize(img, img_size)
             img_dict[image] = img
         img_df = pd.DataFrame(list(img_dict.items()), columns=['stimName', 'img'])
@@ -160,14 +153,13 @@ class DatasetBuilder(object):
         df['scanpath_len'] = 0
         for i in range(df.scanpath.size):
             df.at[i, 'scanpath_len'] = len(df.scanpath[i])
-        # prepering the data
-        sparse_indexes = df[df.scanpath_len > sparse_threshold].index()  # > 85%
+        # getting spars samples indexes
+        sparse_indexes = df.index[df.scanpath_len < sparse_threshold].tolist()  # > 85%
 
         return sparse_indexes
 
-    def load_fixations_related_datasets(self, stimType, path):
+    def load_fixations_related_datasets(self, currpath, fixation_df, stimType):
         print("Log.....Reading fixation data")
-        fixation_df = pd.read_pickle(path)
         # choose stim to run on
         for stim in self.stims_array:
             if stim.name == stimType:
@@ -178,12 +170,12 @@ class DatasetBuilder(object):
         stim_size = (stim_size[0], stim_size[1])
 
         maps = self.load_fixation_maps_dataset(fixation_df_by_stim)
-        images = self.load_images_dataset(fixation_df_by_stim, stim_size)
+        images = self.load_images_dataset(currpath, fixation_df_by_stim, stim_size)
         labels = self.load_labels_dataset(fixation_df_by_stim)
 
         return maps, images, labels, stim_size
 
-    def load_scanpath_related_datasets(self, scanpath_df, stimType):
+    def load_scanpath_related_datasets(self, currpath, scanpath_df, stimType):
         print("Log.....Reading scanpath data")
         scanpath_df = scanpath_df
         # choose stim to run on
@@ -196,12 +188,12 @@ class DatasetBuilder(object):
         stim_size = (stim_size[0], stim_size[1])
 
         scanpaths = self.load_scanpath_dataset(scanpath_df_by_stim)
-        images = self.load_images_for_scanpath_dataset(scanpath_df_by_stim, stim_size)
+        images = self.load_images_for_scanpath_dataset(currpath, scanpath_df_by_stim, stim_size)
         labels = self.load_labels_dataset(scanpath_df_by_stim)
 
         return scanpaths, images, labels, stim_size
 
-    def train_test_val_split_subjects_balnced(self, df, seed, is_patch):
+    def train_test_val_split_subjects_balnced(self, df, seed, is_patch, is_simple_lstm):
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
         trainset = []
@@ -230,15 +222,16 @@ class DatasetBuilder(object):
                 valset = pd.concat([valset, val])
                 testset = pd.concat([testset, test])
 
-        print("train", trainset.binary_bid.value_counts())
-        print("val", valset.binary_bid.value_counts())
-        print("test", testset.binary_bid.value_counts())
 
         print("Building train, val, test datasets...")
         if is_patch:
             trainMapsX = np.asanyarray(trainset.patch.tolist())
             valMapsX = np.asanyarray(valset.patch.tolist())
             testMapsX = np.asanyarray(testset.patch.tolist())
+        elif is_simple_lstm:
+            trainMapsX = np.asanyarray(trainset.scanpath.tolist())
+            valMapsX = np.asanyarray(valset.scanpath.tolist())
+            testMapsX = np.asanyarray(testset.scanpath.tolist())
         else:
             trainMapsX = np.asanyarray(trainset.fixationMap.tolist())
             valMapsX = np.asanyarray(valset.fixationMap.tolist())
@@ -252,60 +245,16 @@ class DatasetBuilder(object):
 
         return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
 
-    def train_test_val_split_subjects_balnced_for_lstm(self, df, seed):
 
-        df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
-        trainset = []
-        testset = []
-        valset = []
-        flag = 0
-        for subject in df.subjectId.unique():
-            dfsubject = df[df["subjectId"] == subject]
-            dfsubject = shuffle(dfsubject, random_state=seed)
-            dataSize = dfsubject.shape[0]
-            trainSize = int(dataSize * 0.75)
-            train = dfsubject[:trainSize]
-            test = dfsubject[trainSize:]
-            # validation split
-            testDataSize = test.shape[0]
-            testSize = int(testDataSize * 0.70)
-            val = test[:testSize]
-            test = test[testSize:]
-            if flag == 0:
-                trainset = train
-                valset = val
-                testset = test
-                flag = 1
-            else:
-                trainset = pd.concat([trainset, train])
-                valset = pd.concat([valset, val])
-                testset = pd.concat([testset, test])
-
-        #print("train", trainset.binary_bid.value_counts())
-        #print("val", valset.binary_bid.value_counts())
-        #print("test", testset.binary_bid.value_counts())
-
-        print("Building train, val, test datasets...")
-        trainPatchesX = np.asanyarray(trainset.patch.tolist())
-        valPatchesX = np.asanyarray(valset.patch.tolist())
-        testPatchesX = np.asanyarray(testset.patch.tolist())
-        trainY = np.asanyarray(trainset.binary_bid.tolist())
-        valY = np.asanyarray(valset.binary_bid.tolist())
-        testY = np.asanyarray(testset.binary_bid.tolist())
-
-        return trainPatchesX, valPatchesX, testPatchesX, trainY, valY, testY
-
-
-    def create_patches_dataset(self, scanpaths, images, labels, patch_size, saliency):
+    def create_patches_dataset(self, currpath, scanpaths, images, labels, patch_size, saliency):
         print("Log.....Building patches")
         df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
-
         sparse_indexes = self.find_sparse_samples(df, 2300)
         df.drop(df.index[sparse_indexes], inplace=True)
-
+        df.reset_index(inplace=True)
         patches_list = []
         for scanpath, img in zip(df.scanpath, df.img):
-            scipy.misc.imsave("../../etp_data/processed/patches/" + "original_img.jpg", img)
+            #scipy.misc.imsave(currpath + "/etp_data/processed/patches/" + "original_img.jpg", img)
             if saliency:
                 # initialize OpenCV's static saliency spectral residual detector and
                 # compute the saliency map
@@ -331,7 +280,8 @@ class DatasetBuilder(object):
                 patch = cv2.copyMakeBorder(patch, 0, padx, 0, pady, cv2.BORDER_CONSTANT)
                 #scipy.misc.imsave("../../etp_data/processed/patches/" + str(patch_num) + "_patch_ORG.jpg", patch)
                 patch = patch/255
-                patch = patch[:, :, np.newaxis]
+                if saliency:
+                    patch = patch[:, :, np.newaxis]
                 patches.append(patch)
                 patch_num += 1
             patches_list.append(np.asanyarray(patches))
@@ -339,5 +289,21 @@ class DatasetBuilder(object):
 
         df["patch"] = patches_list
         df = df[["sampleId", "patch", "img", "binary_bid"]]
+
+        return df
+
+    def get_scanpath_for_simple_lstm(self, scanpaths, images, labels):
+        df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
+        sparse_indexes = self.find_sparse_samples(df, 2300)
+        df.drop(df.index[sparse_indexes], inplace=True)
+        df.reset_index(inplace=True)
+
+        return df
+
+    def get_fixations_for_cnn(self, scanpaths, maps, images, labels):
+        df = maps.merge(images,on='sampleId').merge(labels,on='sampleId').merge(scanpaths,on='sampleId')
+        sparse_indexes = self.find_sparse_samples(df, 2300)
+        df.drop(df.index[sparse_indexes], inplace=True)
+        df.reset_index(inplace=True)
 
         return df
