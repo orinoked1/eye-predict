@@ -8,6 +8,9 @@ from matplotlib import pyplot as plt
 from keras.layers import concatenate
 from keras.models import Model
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__file__)
 
 
 # CNN multi input
