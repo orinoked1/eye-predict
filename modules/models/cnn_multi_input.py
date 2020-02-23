@@ -42,8 +42,8 @@ class CnnMultiInput:
 
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
-        x = Dense(4, activation="relu")(combinedInput)
-        x = Dense(1, activation="softmax")(x)
+        x = Dense(16, activation="relu")(combinedInput)
+        x = Dense(10, activation="softmax")(x)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
