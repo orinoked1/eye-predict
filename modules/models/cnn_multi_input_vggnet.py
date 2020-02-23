@@ -13,9 +13,8 @@ from keras.layers import concatenate
 from keras.layers.core import Dropout
 
 
-
 # CNN multi input
-class CnnMultiInputVGGNet(object):
+class CnnMultiInputVGGNet:
     def __init__(self, seed, dataset, saliency, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)

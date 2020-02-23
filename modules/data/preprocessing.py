@@ -3,7 +3,8 @@ import codecs
 import os
 import glob
 
-class DataPreprocess(object):
+
+class DataPreprocess:
 
     def __init__(self, exp_name, both_eye_data_path, one_eye_data_path, trial_start_str, trial_end_str, output_file_both_eye, output_file_one_eye, stimarray):
         self.exp_name = exp_name

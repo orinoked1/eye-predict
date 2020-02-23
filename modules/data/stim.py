@@ -1,10 +1,6 @@
-import pandas as pd
-import codecs
-import os
-import glob
-import yaml
 
-class Stim(object):
+
+class Stim:
 
     def __init__(self, name, id, size):
         self.name = name

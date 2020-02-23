@@ -11,9 +11,8 @@ from keras.layers import concatenate
 from keras.models import Model
 
 
-
 # CNN LSTM image concatenation for sequence classification
-class CnnLstmImgConcat(object):
+class CnnLstmImgConcat:
     def __init__(self, seed, dataset, saliency, patch_size, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)

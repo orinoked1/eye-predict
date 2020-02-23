@@ -8,11 +8,13 @@ from matplotlib import pyplot as plt
 from keras.layers import concatenate
 from keras.models import Model
 import pandas as pd
+import logging
 
+logger = logging.getLogger(__file__)
 
 
 # CNN multi input
-class CnnMultiInput(object):
+class CnnMultiInput:
     def __init__(self, seed, dataset, saliency, run_name, stim_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)

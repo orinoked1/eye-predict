@@ -8,7 +8,7 @@ import seaborn as sns
 import scipy.misc
 
 
-class DatasetBuilder(object):
+class DatasetBuilder:
 
     def __init__(self, stims_array):
         self.stims_array = stims_array

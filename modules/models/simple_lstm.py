@@ -10,7 +10,7 @@ from keras.preprocessing import sequence
 
 
 # SIMPLE LSTM for sequence classification
-class SimpleLstm(object):
+class SimpleLstm:
     def __init__(self, seed, dataset, run_name):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
