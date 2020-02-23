@@ -191,6 +191,7 @@ def svm_run(stimArray, scanpath_df):
 
 stimArray, scanpath_df, fixation_df = get_datasets()
 cnn_multi_input_model_run(stimArray, fixation_df)
+
 #simple_lstm_model_run(stimArray, scanpath_df)
 #cnn_lstm_model_run(stimArray, scanpath_df)
 #svm_run(stimArray, scanpath_df)

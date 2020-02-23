@@ -3,6 +3,8 @@ import cv2
 import pandas as pd
 from modules.data.visualization import DataVis
 from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
+import seaborn as sns
 import scipy.misc
 
 
@@ -145,9 +147,13 @@ class DatasetBuilder(object):
     def load_labels_dataset(self, df):
         print("Log.....Loading labels")
         df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
-        #labels = np.asanyarray(df.binary_bid)
+        df['bins_bid'] = round(df.bid)
 
-        return df[["sampleId", "binary_bid"]]
+        x = pd.Series(df.bins_bid, name="Ranking (1-10)")
+        sns.distplot(x, bins=10).set_title('Ranking distribution for Snack stimuli')
+        plt.show()
+
+        return df[["sampleId", "bins_bid"]]
 
     def find_sparse_samples(self, df, sparse_threshold):
         df['scanpath_len'] = 0
@@ -239,9 +245,9 @@ class DatasetBuilder(object):
         trainImagesX = np.asanyarray(trainset.img.tolist())
         valImagesX = np.asanyarray(valset.img.tolist())
         testImagesX = np.asanyarray(testset.img.tolist())
-        trainY = np.asanyarray(trainset.binary_bid.tolist())
-        valY = np.asanyarray(valset.binary_bid.tolist())
-        testY = np.asanyarray(testset.binary_bid.tolist())
+        trainY = np.asanyarray(trainset.bins_bid.tolist())
+        valY = np.asanyarray(valset.bins_bid.tolist())
+        testY = np.asanyarray(testset.bins_bid.tolist())
 
         return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
 

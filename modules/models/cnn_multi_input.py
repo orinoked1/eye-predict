@@ -27,7 +27,7 @@ class CnnMultiInput(object):
         self.run_name = run_name
         self.seed = seed
         self.batch_size = 16
-        self.num_epochs = 2
+        self.num_epochs = 10
         self.stimSize = stim_size
 
     def define_model(self):
@@ -41,13 +41,13 @@ class CnnMultiInput(object):
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
         x = Dense(4, activation="relu")(combinedInput)
-        x = Dense(1, activation="sigmoid")(x)
+        x = Dense(1, activation="softmax")(x)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
         print(self.model.summary())
 
