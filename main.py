@@ -84,7 +84,7 @@ def cnn_lstm_model_run(stimArray, scanpath_df):
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df, stimType)
     df = datasetbuilder.create_patches_dataset(currpath, scanpaths, images, labels, patch_size, saliency)
-    split_dataset = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, is_patch)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch)
 
     cnn_lstm = CnnLstm(seed, split_dataset, saliency, patch_size, run_name)
     # Build train and evaluate model
@@ -105,7 +105,7 @@ def cnn_lstm_img_concat_model_run(stimArray, scanpath_df):
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
     df = datasetbuilder.create_patches_dataset(currpath, scanpaths, images, labels, patch_size, saliency)
-    split_dataset = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, is_patch, is_simple_lstm)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm)
 
     cnn_lstm_img_concat = CnnLstmImgConcat(seed, split_dataset, saliency, patch_size, run_name, stim_size)
     # Build train and evaluate model
@@ -146,7 +146,7 @@ def cnn_multi_input_model_run(stimArray, fixation_df):
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
     df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
-    split_dataset = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, is_patch, is_simple_lstm)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm)
     cnn_multi_input = CnnMultiInput(seed, split_dataset, saliency, run_name, stim_size)
     # Build train and evaluate model
     cnn_multi_input.define_model()
@@ -167,7 +167,7 @@ def cnn_multi_input_vggnet_model_run(stimArray, fixation_df):
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
     df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
-    split_dataset = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, is_patch, is_simple_lstm)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm)
 
     cnn_multi_input_vggnet = CnnMultiInputVGGNet(seed, split_dataset, saliency, run_name, stim_size)
     # Build train and evaluate model

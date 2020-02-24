@@ -6,7 +6,7 @@ from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-
+from keras.utils import to_categorical
 import scipy.misc
 
 
@@ -149,8 +149,8 @@ class DatasetBuilder:
     def load_labels_dataset(self, df):
         print("Log.....Loading labels")
         df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
-        df['bins_bid'] = round(df.bid)
-
+        df['bins_bid'] = round(df.bid).astype('category')
+        #df['bins_bid'] = to_categorical(df['bins_bid'])
         x = pd.Series(df.bins_bid, name="Ranking (1-10)")
         sns.distplot(x, bins=10).set_title('Ranking distribution for Snack stimuli')
         plt.show()
@@ -202,58 +202,34 @@ class DatasetBuilder:
         return scanpaths, images, labels, stim_size
 
     def train_test_val_split_stratify_by_subject(self, df, seed, is_patch, is_simple_lstm):
-
-        train, test= train_test_split(df, stratify=df[['subjectId']], test_size=0.25)
-
-        test, val = train_test_split(test, stratify=df[['subjectId']], test_size=0.3)
+        print("Building train, val, test datasets...")
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
-        trainset = []
-        testset = []
-        valset = []
-        flag = 0
-        for subject in df.subjectId.unique():
-            dfsubject = df[df["subjectId"] == subject]
-            dfsubject = shuffle(dfsubject, random_state=seed)
-            dataSize = dfsubject.shape[0]
-            trainSize = int(dataSize * 0.75)
-            train = dfsubject[:trainSize]
-            test = dfsubject[trainSize:]
-            # validation split
-            testDataSize = test.shape[0]
-            testSize = int(testDataSize * 0.70)
-            val = test[:testSize]
-            test = test[testSize:]
-            if flag == 0:
-                trainset = train
-                valset = val
-                testset = test
-                flag = 1
-            else:
-                trainset = pd.concat([trainset, train])
-                valset = pd.concat([valset, val])
-                testset = pd.concat([testset, test])
+        train, test = train_test_split(df, stratify=df[['subjectId']],
+                                       test_size=0.30, random_state=seed)
+
+        val, test = train_test_split(test, stratify=test[['subjectId']],
+                                     test_size=0.30, random_state=seed)
 
 
-        print("Building train, val, test datasets...")
         if is_patch:
-            trainMapsX = np.asanyarray(trainset.patch.tolist())
-            valMapsX = np.asanyarray(valset.patch.tolist())
-            testMapsX = np.asanyarray(testset.patch.tolist())
+            trainMapsX = np.asanyarray(train.patch.tolist())
+            valMapsX = np.asanyarray(val.patch.tolist())
+            testMapsX = np.asanyarray(test.patch.tolist())
         elif is_simple_lstm:
-            trainMapsX = np.asanyarray(trainset.scanpath.tolist())
-            valMapsX = np.asanyarray(valset.scanpath.tolist())
-            testMapsX = np.asanyarray(testset.scanpath.tolist())
+            trainMapsX = np.asanyarray(train.scanpath.tolist())
+            valMapsX = np.asanyarray(val.scanpath.tolist())
+            testMapsX = np.asanyarray(test.scanpath.tolist())
         else:
-            trainMapsX = np.asanyarray(trainset.fixationMap.tolist())
-            valMapsX = np.asanyarray(valset.fixationMap.tolist())
-            testMapsX = np.asanyarray(testset.fixationMap.tolist())
-        trainImagesX = np.asanyarray(trainset.img.tolist())
-        valImagesX = np.asanyarray(valset.img.tolist())
-        testImagesX = np.asanyarray(testset.img.tolist())
-        trainY = np.asanyarray(trainset.bins_bid.tolist())
-        valY = np.asanyarray(valset.bins_bid.tolist())
-        testY = np.asanyarray(testset.bins_bid.tolist())
+            trainMapsX = np.asanyarray(train.fixationMap.tolist())
+            valMapsX = np.asanyarray(val.fixationMap.tolist())
+            testMapsX = np.asanyarray(test.fixationMap.tolist())
+        trainImagesX = np.asanyarray(train.img.tolist())
+        valImagesX = np.asanyarray(val.img.tolist())
+        testImagesX = np.asanyarray(test.img.tolist())
+        trainY = np.asanyarray(train.bins_bid.tolist())
+        valY = np.asanyarray(val.bins_bid.tolist())
+        testY = np.asanyarray(test.bins_bid.tolist())
 
         return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
 

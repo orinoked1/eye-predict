@@ -47,7 +47,7 @@ def create_cnn(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 
 	# flatten the volume, then FC => RELU => BN => DROPOUT
 	x = Flatten()(x)
-	x = Dense(32)(x)
+	x = Dense(16)(x)
 	x = Activation("relu")(x)
 	x = BatchNormalization(axis=chanDim)(x)
 	x = Dropout(0.5)(x)
