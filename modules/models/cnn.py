@@ -23,7 +23,7 @@ use_gpu = tf.test.is_gpu_available()
 print("use GPU?:",use_gpu )
 
 
-def create_cnn(width, height, depth, filters=(16, 32, 64, 128), regress=False): #(16, 32, 64, 128)
+def create_cnn(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	# initialize the input shape and channel dimension, assuming
 	# TensorFlow/channels-last ordering
 	inputShape = (height, width, depth)
@@ -56,10 +56,6 @@ def create_cnn(width, height, depth, filters=(16, 32, 64, 128), regress=False): 
 	# coming out of the MLP
 #	x = Dense(4)(x)
 #	x = Activation("relu")(x)
-
-	# check to see if the regression node should be added
-	if regress:
-		x = Dense(1, activation="linear")(x)
 
 	# construct the CNN
 	model = Model(inputs, x)

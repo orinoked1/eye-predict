@@ -34,8 +34,8 @@ class CnnMultiInput:
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
-        cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
+        cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel)
+        cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel)
 
         # create the input to our final set of layers as the *output* of both CNNs
         combinedInput = concatenate([cnn_map.output, cnn_image.output])

@@ -124,7 +124,7 @@ def simple_lstm_model_run(stimArray, scanpath_df):
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
     df = datasetbuilder.get_scanpath_for_simple_lstm(scanpaths, images, labels)
-    split_dataset = datasetbuilder.train_test_val_split_subjects_balnced(df, seed, is_patch, is_simple_lstm)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm)
 
     simple_lstm = SimpleLstm(seed, split_dataset, run_name)
     # Build train and evaluate model
@@ -189,9 +189,17 @@ def svm_run(stimArray, scanpath_df):
     # Build train and evaluate model
     svm.run_model()
 
+
 stimArray, scanpath_df, fixation_df = get_datasets()
 cnn_multi_input_model_run(stimArray, fixation_df)
 
-#simple_lstm_model_run(stimArray, scanpath_df)
-#cnn_lstm_model_run(stimArray, scanpath_df)
-#svm_run(stimArray, scanpath_df)
+def main():
+    stimArray, scanpath_df, fixation_df = get_datasets()
+    cnn_multi_input_model_run(stimArray, fixation_df)
+    # simple_lstm_model_run(stimArray, scanpath_df)
+    # cnn_lstm_model_run(stimArray, scanpath_df)
+    # svm_run(stimArray, scanpath_df)
+
+
+if __name__ == '__main__':
+    main()

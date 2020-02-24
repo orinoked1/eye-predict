@@ -5,6 +5,8 @@ from modules.data.visualization import DataVis
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+
 import scipy.misc
 
 
@@ -199,7 +201,11 @@ class DatasetBuilder:
 
         return scanpaths, images, labels, stim_size
 
-    def train_test_val_split_subjects_balnced(self, df, seed, is_patch, is_simple_lstm):
+    def train_test_val_split_stratify_by_subject(self, df, seed, is_patch, is_simple_lstm):
+
+        train, test= train_test_split(df, stratify=df[['subjectId']], test_size=0.25)
+
+        test, val = train_test_split(test, stratify=df[['subjectId']], test_size=0.3)
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
         trainset = []
