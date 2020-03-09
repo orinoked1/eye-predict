@@ -103,6 +103,8 @@ class CnnMultiInput:
         # model evaluate
         results = self.model.evaluate([testMapsX, testImagesX], testY, batch_size=self.batch_size)
         print('test loss, test acc:', results)
+        results_df = pd.DataFrame(results, columns=["loss, acc"])
+        results_df.to_csv(currpath + "/etp_data/processed/results.csv", index=False)
 
         """
         # make predictions on the testing data
