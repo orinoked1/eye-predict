@@ -149,7 +149,7 @@ def cnn_multi_input_model_run(stimArray, fixation_df):
 
     df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType)
 
-    df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
+    #df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
     split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
     cnn_multi_input = CnnMultiInput(seed, split_dataset, saliency, run_name, stim_size)
     # Build train and evaluate model

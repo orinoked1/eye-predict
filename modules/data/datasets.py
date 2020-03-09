@@ -304,6 +304,7 @@ class DatasetBuilder:
 
     def get_time_colored_dataset(self, scanpaths, maps, images, labels, stimType):
         try:
+            print("Reading colored path pickle")
             df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
         except:
             df = maps.merge(images, on='sampleId').merge(labels, on='sampleId').merge(scanpaths, on='sampleId')
@@ -338,7 +339,7 @@ class DatasetBuilder:
                     toPlot.append(frame)
 
                 colored_path_list.append(frame)
-                print(len(colored_path_list))
+
             df["colored_path"] = colored_path_list
             df['colored_path'] = df['colored_path'].apply(lambda x: x / 255)
             df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
