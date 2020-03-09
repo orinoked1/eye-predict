@@ -138,15 +138,19 @@ def cnn_multi_input_model_run(stimArray, fixation_df):
     is_patch = False
     is_simple_lstm = False
     saliency = False
+    is_colored_path = True
     currpath = os.getcwd()
-    run_name = "_cnn_multi_input_run_1_" + stimType
+    run_name = "vggnet_cnn_multi_input_run_biggerLR_" + stimType
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
                                                                                          stimType)
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
+
+    df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType)
+
     df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
-    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
     cnn_multi_input = CnnMultiInput(seed, split_dataset, saliency, run_name, stim_size)
     # Build train and evaluate model
     cnn_multi_input.define_model()
@@ -191,8 +195,11 @@ def svm_run(stimArray, scanpath_df):
 
 
 stimArray, scanpath_df, fixation_df = get_datasets()
+#stimArray, scanpath_df, fixation_df, colored_df = get_datasets()
+#cnn_multi_input_model_run(stimArray, colored_df)
 cnn_multi_input_model_run(stimArray, fixation_df)
 
+"""
 def main():
     stimArray, scanpath_df, fixation_df = get_datasets()
     cnn_multi_input_model_run(stimArray, fixation_df)
@@ -203,3 +210,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+"""

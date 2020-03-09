@@ -8,6 +8,8 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 import scipy.misc
+import os
+import random
 
 
 class DatasetBuilder:
@@ -117,7 +119,7 @@ class DatasetBuilder:
         print("Log.....Loading images")
         img_dict = {}
         for image in np.asanyarray(df.stimName.unique()):
-            print("loading image - " + image)
+            #print("loading image - " + image)
             img = DataVis.stimulus(currpath, "/etp_data/Stim_0/", image)
             img = cv2.resize(img, img_size)
             img = img / 255
@@ -134,7 +136,7 @@ class DatasetBuilder:
         print("Log.....Loading images")
         img_dict = {}
         for image in np.asanyarray(df.stimName.unique()):
-            print("loading image - " + image)
+            #print("loading image - " + image)
             img = DataVis.stimulus(currpath, "/etp_data/Stim_0/", image)
             img = cv2.resize(img, img_size)
             img_dict[image] = img
@@ -149,11 +151,11 @@ class DatasetBuilder:
     def load_labels_dataset(self, df):
         print("Log.....Loading labels")
         df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
-        df['bins_bid'] = round(df.bid).astype('category')
-        #df['bins_bid'] = to_categorical(df['bins_bid'])
-        x = pd.Series(df.bins_bid, name="Ranking (1-10)")
-        sns.distplot(x, bins=10).set_title('Ranking distribution for Snack stimuli')
-        plt.show()
+        df['bins_bid'] = round(df.bid)
+        #x = pd.Series(df.bins_bid, name="Ranking (1-10)")
+        #sns.distplot(x, bins=10).set_title('Ranking distribution for Snack stimuli')
+        #plt.show()
+        df['bins_bid'] = df.bins_bid -1
 
         return df[["sampleId", "bins_bid"]]
 
@@ -201,7 +203,7 @@ class DatasetBuilder:
 
         return scanpaths, images, labels, stim_size
 
-    def train_test_val_split_stratify_by_subject(self, df, seed, is_patch, is_simple_lstm):
+    def train_test_val_split_stratify_by_subject(self, df, seed, is_patch, is_simple_lstm, is_colored_path):
         print("Building train, val, test datasets...")
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
@@ -220,6 +222,10 @@ class DatasetBuilder:
             trainMapsX = np.asanyarray(train.scanpath.tolist())
             valMapsX = np.asanyarray(val.scanpath.tolist())
             testMapsX = np.asanyarray(test.scanpath.tolist())
+        elif is_colored_path:
+            trainMapsX = np.asanyarray(train.colored_path.tolist())
+            valMapsX = np.asanyarray(val.colored_path.tolist())
+            testMapsX = np.asanyarray(test.colored_path.tolist())
         else:
             trainMapsX = np.asanyarray(train.fixationMap.tolist())
             valMapsX = np.asanyarray(val.fixationMap.tolist())
@@ -295,3 +301,47 @@ class DatasetBuilder:
         df.reset_index(inplace=True)
 
         return df
+
+    def get_time_colored_dataset(self, scanpaths, maps, images, labels, stimType):
+        try:
+            df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
+        except:
+            df = maps.merge(images, on='sampleId').merge(labels, on='sampleId').merge(scanpaths, on='sampleId')
+            sparse_indexes = self.find_sparse_samples(df, 2300)
+            df.drop(df.index[sparse_indexes], inplace=True)
+            df.reset_index(inplace=True)
+            colored_path_list = []
+
+            for stim in self.stims_array:
+                if stim.name == stimType:
+                    stim_size = stim.size
+            print("Log... Building time colored dataset")
+            for scanpath in df.scanpath:
+                blank_img = np.zeros((stim_size[0], stim_size[1], 3), np.uint8)
+                toPlot = [cv2.resize(blank_img, (stim_size[0], stim_size[1]))]
+
+                for i in range(np.shape(scanpath)[0]):
+                    if (i % 50) == 0:
+                        r = random.randint(0, 255)
+                        g = random.randint(0, 255)
+                        b = random.randint(0, 255)
+                        rgb = [r, g, b]
+                    fixation = scanpath[i].astype(int)
+
+                    frame = np.copy(toPlot[-1]).astype(np.uint8)
+
+                    if i > 0:
+                        prec_fixation = scanpath[i - 1].astype(int)
+                        cv2.line(frame, (prec_fixation[0], prec_fixation[1]), (fixation[0], fixation[1]), rgb,
+                                 thickness=3, lineType=8, shift=0)
+
+                    toPlot.append(frame)
+
+                colored_path_list.append(frame)
+                print(len(colored_path_list))
+            df["colored_path"] = colored_path_list
+            df['colored_path'] = df['colored_path'].apply(lambda x: x / 255)
+            df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
+
+        return df[["sampleId", "colored_path", "img", "bins_bid"]]
+

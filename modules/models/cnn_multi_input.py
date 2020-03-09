@@ -9,6 +9,7 @@ from keras.layers import concatenate
 from keras.models import Model
 import pandas as pd
 import logging
+from keras import optimizers
 
 logger = logging.getLogger(__file__)
 
@@ -28,14 +29,15 @@ class CnnMultiInput:
             self.channel = 3
         self.run_name = run_name
         self.seed = seed
-        self.batch_size = 16
-        self.num_epochs = 10
+        self.batch_size = 32
+        self.num_epochs = 30
         self.stimSize = stim_size
+        self.num_class = 10
 
     def define_model(self):
         # create the two CNN models
         cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel)
-        cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel)
+        cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
 
         # create the input to our final set of layers as the *output* of both CNNs
         combinedInput = concatenate([cnn_map.output, cnn_image.output])
@@ -43,13 +45,15 @@ class CnnMultiInput:
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
         x = Dense(16, activation="relu")(combinedInput)
-        x = Dense(10, activation="softmax")(x)
+        x = Dense(self.num_class, activation="softmax")(x)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        optimizer = optimizers.Adam(lr=0.0001)
+        #optimizer = optimizers.RMSprop(lr=0.0001)
+        self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
 
@@ -72,13 +76,13 @@ class CnnMultiInput:
         # plot metrics
         # summarize history for accuracy
         fig = plt.figure(2)
-        plt.plot(self.history.history['accuracy'])
-        plt.plot(self.history.history['val_accuracy'])
+        plt.plot(self.history.history['sparse_categorical_accuracy'])
+        plt.plot(self.history.history['val_sparse_categorical_accuracy'])
         plt.title('model accuracy')
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
-        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "train_val_acc.pdf", bbox_inches='tight')
+        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "_train_val_acc.pdf", bbox_inches='tight')
         plt.show()
         # summarize history for loss
         fig = plt.figure(3)
@@ -88,7 +92,7 @@ class CnnMultiInput:
         plt.ylabel('loss')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
-        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "train_val_loss.pdf", bbox_inches='tight')
+        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "_train_val_loss.pdf", bbox_inches='tight')
         plt.show()
 
         # shuffle data
@@ -99,6 +103,8 @@ class CnnMultiInput:
         # model evaluate
         results = self.model.evaluate([testMapsX, testImagesX], testY, batch_size=self.batch_size)
         print('test loss, test acc:', results)
+
+        """
         # make predictions on the testing data
         predY = self.model.predict([testMapsX, testImagesX]).ravel()
         fpr_keras, tpr_keras, thresholds_keras = roc_curve(testY, predY)
@@ -121,3 +127,4 @@ class CnnMultiInput:
         results_list.append(auc_keras)
         results_df = pd.DataFrame(results_list)
         results_df.to_csv("cnn_multi_input_results_df.csv")
+        """
