@@ -9,6 +9,7 @@ from sklearn.metrics import auc
 from matplotlib import pyplot as plt
 from keras.layers import concatenate
 from keras.models import Model
+from keras import optimizers
 
 
 # CNN LSTM image concatenation for sequence classification
@@ -30,26 +31,30 @@ class CnnLstmImgConcat:
         self.batch_size = 16
         self.num_epochs = 2
         self.stimSize = stim_size
+        self.num_class = 10
 
     def define_model(self):
         # create the two CNN models
-        cnn_patchscan = cnn.create_cnn(self.patch_size, self.patch_size, self.channel, regress=False)
-        cnn_image = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel, regress=False)
+        cnn_patchscan = cnn.map_vggNet(self.patch_size, self.patch_size, self.channel)
+        cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
 
         # create the input to our final set of layers as the *output* of both CNNs
         combinedInput = concatenate([cnn_patchscan.output, cnn_image.output])
 
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
-        x = TimeDistributed(Dense(4, activation="relu"), input_shape=(50, 32))(combinedInput)
-        x = LSTM(10, activation='relu', return_sequences=False)(x)
-        x = Dense(1, activation="sigmoid")(x)
+        x = Dense(32, activation="relu")(combinedInput)
+        x = TimeDistributed(Dense(16, activation="relu"), input_shape=(50, 16))(x)
+        x = LSTM(16, activation='relu', return_sequences=False)(x)
+        x = Dense(self.num_class, activation="softmax")(x)
 
         # our final model will accept scanpth on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_patchscan.input, cnn_image.input], outputs=x)
 
-        self.model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        optimizer = optimizers.Adam(lr=0.00001)
+        self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer,
+                           metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
 
@@ -93,12 +98,13 @@ class CnnLstmImgConcat:
 
         # shuffle data
         testPatchesX, testImagesX, testY = shuffle(self.testPatchesX, self.testImagesX, self.testY, random_state=self.seed)
-        # shuffle data
-        # testPatchesX, testY = shuffle(testPatchesX, testY, random_state=seed)
+
 
         # model evaluate
         results = self.model.evaluate([testPatchesX, testImagesX], testY, batch_size=128)
         print('test loss, test acc:', results)
+
+        """
         # make predictions on the testing data
         predY = self.model.predict([testPatchesX, testImagesX]).ravel()
         fpr_keras, tpr_keras, thresholds_keras = roc_curve(testY, predY)
@@ -115,3 +121,4 @@ class CnnLstmImgConcat:
         plt.legend(loc='best')
         fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "roc.pdf", bbox_inches='tight')
         plt.show()
+        """

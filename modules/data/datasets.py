@@ -141,10 +141,7 @@ class DatasetBuilder:
             img = cv2.resize(img, img_size)
             img_dict[image] = img
         img_df = pd.DataFrame(list(img_dict.items()), columns=['stimName', 'img'])
-        #scipy.misc.imsave("../../etp_data/processed/temp0.jpg", img_dict["1_1027.jpg"])
         newdf = pd.merge(df, img_df, on='stimName', how='left')
-        #x = dfnew[dfnew['stimName'] == "1_1027.jpg"]
-        #scipy.misc.imsave("../../etp_data/processed/temp1.jpg", x["img"].values[0])
 
         return newdf[["sampleId", "img"]]
 
@@ -207,6 +204,8 @@ class DatasetBuilder:
         print("Building train, val, test datasets...")
 
         df["subjectId"] = df['sampleId'].apply(lambda x: x.split("_")[0])
+        x = df.subjectId.unique().astype(int)
+        print(x)
         train, test = train_test_split(df, stratify=df[['subjectId']],
                                        test_size=0.30, random_state=seed)
 
@@ -242,7 +241,7 @@ class DatasetBuilder:
 
     def create_patches_dataset(self, currpath, scanpaths, images, labels, patch_size, saliency):
         print("Log.....Building patches")
-        df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
+        df = scanpaths.merge(images, on='sampleId').merge(labels,on='sampleId')
         sparse_indexes = self.find_sparse_samples(df, 2300)
         df.drop(df.index[sparse_indexes], inplace=True)
         df.reset_index(inplace=True)
@@ -265,7 +264,6 @@ class DatasetBuilder:
             #build patches around the fixations_centers
             patches = []
             patch_num = 1
-            #DataVis.scanpath_by_img("../../etp_data/processed/patches/", scanpath, stim_size, img, False)
             for xi, yi in fixations_centers:
                 length = int(patch_size/2)
                 patch = img[yi - length: yi + length, xi - length: xi + length]
@@ -279,10 +277,10 @@ class DatasetBuilder:
                 patches.append(patch)
                 patch_num += 1
             patches_list.append(np.asanyarray(patches))
-            img = (img / 255).astype("uint8")
 
         df["patch"] = patches_list
-        df = df[["sampleId", "patch", "img", "binary_bid"]]
+        df['img'] = df['img'].apply(lambda x: x / 255)
+        df = df[["sampleId", "patch", "img", "bins_bid"]]
 
         return df
 
@@ -302,10 +300,14 @@ class DatasetBuilder:
 
         return df
 
-    def get_time_colored_dataset(self, scanpaths, maps, images, labels, stimType):
+    def get_time_colored_dataset(self, scanpaths, maps, images, labels, stimType, timePeriodMilisec):
         try:
             print("Reading colored path pickle")
-            df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
+            if timePeriodMilisec > 0:
+                df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + str(timePeriodMilisec) + "_milisec.pkl")
+            else:
+                df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_allData.pkl")
+                df['img'] = df['img'].apply(lambda x: x / 255)
         except:
             df = maps.merge(images, on='sampleId').merge(labels, on='sampleId').merge(scanpaths, on='sampleId')
             sparse_indexes = self.find_sparse_samples(df, 2300)
@@ -322,7 +324,7 @@ class DatasetBuilder:
                 toPlot = [cv2.resize(blank_img, (stim_size[0], stim_size[1]))]
 
                 for i in range(np.shape(scanpath)[0]):
-                    if (i % 50) == 0:
+                    if (i % timePeriodMilisec) == 0:
                         r = random.randint(0, 255)
                         g = random.randint(0, 255)
                         b = random.randint(0, 255)
@@ -342,7 +344,8 @@ class DatasetBuilder:
 
             df["colored_path"] = colored_path_list
             df['colored_path'] = df['colored_path'].apply(lambda x: x / 255)
-            df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset.pkl")
+            df['img'] = df['img'].apply(lambda x: x / 255)
+            df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + str(timePeriodMilisec) + "_milisec.pkl")
 
         return df[["sampleId", "colored_path", "img", "bins_bid"]]
 

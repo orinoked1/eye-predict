@@ -12,12 +12,12 @@ from keras.applications import VGG16
 from keras.layers import GlobalAveragePooling2D
 
 import tensorflow as tf
-
+"""
 from numpy.random import seed
 seed(11)
 from tensorflow import set_random_seed
 set_random_seed(2)
-
+"""
 path = os.getcwd()
 
 use_gpu = tf.test.is_gpu_available()
@@ -104,6 +104,33 @@ def fixation_cnn(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	# return the CNN
 	return model
 
+def map_vggNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
+	# initialize the input shape and channel dimension, assuming
+	# TensorFlow/channels-last ordering
+	inputShape = (height, width, depth)
+	chanDim = -1
+
+	# define the model input
+	inputs = Input(shape=inputShape)
+
+	base_model = VGG16(weights='imagenet', include_top=False, input_shape=inputShape)
+	x = base_model.output
+	x = GlobalAveragePooling2D()(x)
+	x = Dense(1024, activation='relu')(x)  # we add dense layers so that the model can learn more complex functions and classify for better results.
+	x = Dense(512, activation='relu')(x)  # dense layer 3
+	x = BatchNormalization(axis=chanDim)(x)
+	x = Dropout(0.5)(x)
+
+	# construct the CNN
+	model = Model(base_model.input, x)
+
+	for layer in base_model.layers:
+		layer.name = layer.name + str("_map")
+		layer.trainable = False
+
+	# return the CNN
+	return model
+
 def image_vggNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	# initialize the input shape and channel dimension, assuming
 	# TensorFlow/channels-last ordering
@@ -117,7 +144,6 @@ def image_vggNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	x = base_model.output
 	x = GlobalAveragePooling2D()(x)
 	x = Dense(1024, activation='relu')(x)  # we add dense layers so that the model can learn more complex functions and classify for better results.
-	#x = Dense(1024, activation='relu')(x)  # dense layer 2
 	x = Dense(512, activation='relu')(x)  # dense layer 3
 	x = BatchNormalization(axis=chanDim)(x)
 	x = Dropout(0.5)(x)
@@ -125,7 +151,7 @@ def image_vggNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	# construct the CNN
 	model = Model(base_model.input, x)
 
-	for layer in base_model.layers:
+	for layer in model.layers:
 		layer.name = layer.name + str("_image")
 		layer.trainable = False
 

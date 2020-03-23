@@ -30,13 +30,13 @@ class CnnMultiInput:
         self.run_name = run_name
         self.seed = seed
         self.batch_size = 32
-        self.num_epochs = 30
+        self.num_epochs = 60
         self.stimSize = stim_size
         self.num_class = 10
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.create_cnn(self.stimSize[0], self.stimSize[1], self.channel)
+        cnn_map = cnn.map_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
         cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
 
         # create the input to our final set of layers as the *output* of both CNNs
@@ -51,8 +51,7 @@ class CnnMultiInput:
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        optimizer = optimizers.Adam(lr=0.0001)
-        #optimizer = optimizers.RMSprop(lr=0.0001)
+        optimizer = optimizers.Adam(lr=0.00005)
         self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
@@ -63,6 +62,9 @@ class CnnMultiInput:
         # shuffle data
         trainMapsX, trainImagesX, trainY = shuffle(self.trainMapsX, self.trainImagesX, self.trainY, random_state=self.seed)
         valMapsX, valImagesX, valY = shuffle(self.valMapsX, self.valImagesX, self.valY, random_state=self.seed)
+
+        #trainY = to_categorical(trainY)
+        #valY = to_categorical(valY)
 
         # train the model
         print("[INFO] training model...")

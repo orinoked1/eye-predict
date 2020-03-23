@@ -39,6 +39,11 @@ class DataPreprocess:
             if id in excluded_participents.exclude.values:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
+            # Hack for reading new participents data only #####
+            if id <= 151:
+                print('Excluded subjectId - ' + subjectIntId)
+                continue
+            ##################################################
             print('Log.....Getting Ascii file data - ' + ascFileName)
             ascFile = codecs.open(path + asc_directory + '//' + ascFileName, encoding='utf-8-sig')
             ascData = ascFile.readlines()
@@ -136,6 +141,11 @@ class DataPreprocess:
             if id in excluded_participents.exclude.values:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
+            # Hack for reading new participents data only #####
+            if id <= 151:
+                print('Excluded subjectId - ' + subjectIntId)
+                continue
+            ##################################################
             print('Log.....Getting Ascii file data - ' + ascFileName)
             ascFile = codecs.open(path + asc_directory + '//' + ascFileName, encoding='utf-8-sig')
             ascData = ascFile.readlines()
@@ -429,54 +439,3 @@ class DataPreprocess:
         byRegion_sacc_Df.drop(byRegion_sacc_Df.columns[[0]], axis=1, inplace=True)
 
         return byRegion_fix_Df, byRegion_sacc_Df
-
-        """
-        # FIXATION - stim is snack
-        stim_id = 2
-        stim_resolution = (snack_stim_size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        FIXstimARegionDataDf = fix_df[
-            ((fix_df['stimId'] == stim_id) & (fix_df['avg_X_axis'] >= min_x) & (fix_df['avg_X_axis'] <= max_x) &
-             (fix_df['avg_Y_axis'] >= min_y) & (fix_df['avg_Y_axis'] <= max_y)) == True]
-
-        # FIXATION - stim face
-        stim_resolution = (face_stim_size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        FIXstimBRegionDataDf = fix_df[
-            (((fix_df['stimId'] != stim_id) & (fix_df['avg_X_axis'] >= min_x) & (fix_df['avg_X_axis'] <= max_x) & (
-                    fix_df['avg_Y_axis'] >= min_y) & (fix_df['avg_Y_axis'] <= max_y)) == True)]
-
-        FIXbyImgRegionDataDf = pd.concat([FIXstimARegionDataDf, FIXstimBRegionDataDf])
-        fix_df_unique_after = FIXbyImgRegionDataDf.sampleId.nunique()
-        FIXbyImgRegionDataDf.reset_index(drop=True, inplace=True)
-        # FIXbyImgRegionDataDf.drop(FIXbyImgRegionDataDf.columns[[0]], axis=1, inplace=True)
-
-        # SACCADE - stim is snack
-        stim_id = 2
-        stim_resolution = (snack_stim_size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        SACCstimARegionDataDf = sacc_df[
-            ((sacc_df['stimId'] == stim_id) & (sacc_df['S_X_axis'] >= min_x) & (sacc_df['S_X_axis'] <= max_x) &
-             (sacc_df['S_Y_axis'] >= min_y) & (sacc_df['S_Y_axis'] <= max_y) & (sacc_df['E_X_axis'] >= min_x) & (
-                         sacc_df['E_X_axis'] <= max_x) &
-             (sacc_df['E_Y_axis'] >= min_y) & (sacc_df['E_Y_axis'] <= max_y)) == True]
-
-        # SACCADE - stim face
-        stim_resolution = (face_stim_size)
-        min_x, max_x, min_y, max_y = self.find_stim_boundaries(screen_resolution, stim_resolution)
-        # get only datapoints within stim boundaries
-        SACCstimBRegionDataDf = sacc_df[
-            (((sacc_df['stimId'] != stim_id) & (sacc_df['S_X_axis'] >= min_x) & (sacc_df['S_X_axis'] <= max_x) & (
-                    sacc_df['S_Y_axis'] >= min_y) & (sacc_df['S_Y_axis'] <= max_y) & (sacc_df['E_X_axis'] >= min_x) & (
-                          sacc_df['E_X_axis'] <= max_x) & (
-                      sacc_df['E_Y_axis'] >= min_y) & (sacc_df['E_Y_axis'] <= max_y)) == True)]
-
-        SACCbyImgRegionDataDf = pd.concat([SACCstimARegionDataDf, SACCstimBRegionDataDf])
-        sacc_df_unique_after = SACCbyImgRegionDataDf.sampleId.nunique()
-        SACCbyImgRegionDataDf.reset_index(drop=True, inplace=True)
-
-        return FIXbyImgRegionDataDf, SACCbyImgRegionDataDf, fix_df_unique_after, sacc_df_unique_after
-        """
