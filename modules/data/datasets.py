@@ -304,7 +304,7 @@ class DatasetBuilder:
         try:
             print("Reading colored path pickle")
             if timePeriodMilisec > 0:
-                df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + str(timePeriodMilisec) + "_milisec.pkl")
+                df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + stimType + "_" + str(timePeriodMilisec) + "_milisec.pkl")
             else:
                 df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_allData.pkl")
                 df['img'] = df['img'].apply(lambda x: x / 255)
@@ -345,7 +345,7 @@ class DatasetBuilder:
             df["colored_path"] = colored_path_list
             df['colored_path'] = df['colored_path'].apply(lambda x: x / 255)
             df['img'] = df['img'].apply(lambda x: x / 255)
-            df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + str(timePeriodMilisec) + "_milisec.pkl")
+            df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + stimType + "_" + str(timePeriodMilisec) + "_milisec.pkl")
 
         return df[["sampleId", "colored_path", "img", "bins_bid"]]
 

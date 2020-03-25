@@ -16,7 +16,7 @@ logger = logging.getLogger(__file__)
 
 # CNN multi input
 class CnnMultiInput:
-    def __init__(self, seed, dataset, saliency, run_name, stim_size):
+    def __init__(self, seed, dataset, saliency, run_name, stim_size, run_number):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
         self.trainMapsX, self.valMapsX, self.testMapsX, \
@@ -28,6 +28,7 @@ class CnnMultiInput:
         else:
             self.channel = 3
         self.run_name = run_name
+        self.run_number = run_number
         self.seed = seed
         self.batch_size = 32
         self.num_epochs = 60
@@ -51,7 +52,7 @@ class CnnMultiInput:
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        optimizer = optimizers.Adam(lr=0.00005)
+        optimizer = optimizers.Adam(lr=0.00001)
         self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
@@ -84,7 +85,7 @@ class CnnMultiInput:
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
-        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "_train_val_acc.pdf", bbox_inches='tight')
+        fig.savefig(currpath + "/etp_data/processed/figs/" + self.self.run_number + "_train_val_acc.pdf", bbox_inches='tight')
         plt.show()
         # summarize history for loss
         fig = plt.figure(3)
@@ -94,7 +95,7 @@ class CnnMultiInput:
         plt.ylabel('loss')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
-        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "_train_val_loss.pdf", bbox_inches='tight')
+        fig.savefig(currpath + "/etp_data/processed/figs/" + self.self.run_number + "_train_val_loss.pdf", bbox_inches='tight')
         plt.show()
 
         # shuffle data
@@ -105,8 +106,8 @@ class CnnMultiInput:
         # model evaluate
         results = self.model.evaluate([testMapsX, testImagesX], testY, batch_size=self.batch_size)
         print('test loss, test acc:', results)
-        results_df = pd.DataFrame(results, columns=["loss, acc"])
-        results_df.to_csv(currpath + "/etp_data/processed/results.csv", index=False)
+        results_df = pd.DataFrame(results, columns=[self.run_name + ", loss, acc"])
+        results_df.to_csv(currpath + "/etp_data/processed/" + self.run_number + "_results.csv", index=False)
 
         """
         # make predictions on the testing data

@@ -11,6 +11,7 @@ from modules.models.cnn_lstm_img_concat import CnnLstmImgConcat
 from modules.models.cnn_multi_input import CnnMultiInput
 import os
 import yaml
+from datetime import datetime
 
 def get_datasets(x_subjects):
     path = os.getcwd()
@@ -134,14 +135,15 @@ def simple_lstm_model_run(stimArray, scanpath_df):
 
 def cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df):
     seed = 33
-    stimType = "Face"
+    stimType = "Snack"
     is_patch = False
     is_simple_lstm = False
     saliency = False
     is_colored_path = True
-    timePeriodMilisec = 0
+    timePeriodMilisec = 50
     currpath = os.getcwd()
-    run_name = "twoVGGnets_2303_coloredPath_normelized_" + stimType
+    run_name = "twoVGGnets_2303_coloredPath_snack_" + stimType
+    run_number = datetime.now()
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
                                                                                          stimType)
@@ -151,7 +153,7 @@ def cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df):
     df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType, timePeriodMilisec)
     #df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
     split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
-    cnn_multi_input = CnnMultiInput(seed, split_dataset, saliency, run_name, stim_size)
+    cnn_multi_input = CnnMultiInput(seed, split_dataset, saliency, run_name, stim_size, run_number)
     # Build train and evaluate model
     cnn_multi_input.define_model()
     cnn_multi_input.train_model()

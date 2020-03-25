@@ -9,6 +9,7 @@ from keras.layers import Flatten
 from keras.layers import Input
 from keras.models import Model
 from keras.applications import VGG16
+from keras.applications import ResNet50
 from keras.layers import GlobalAveragePooling2D
 
 import tensorflow as tf
@@ -141,6 +142,33 @@ def image_vggNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
 	inputs = Input(shape=inputShape)
 
 	base_model = VGG16(weights='imagenet', include_top=False, input_shape=inputShape)
+	x = base_model.output
+	x = GlobalAveragePooling2D()(x)
+	x = Dense(1024, activation='relu')(x)  # we add dense layers so that the model can learn more complex functions and classify for better results.
+	x = Dense(512, activation='relu')(x)  # dense layer 3
+	x = BatchNormalization(axis=chanDim)(x)
+	x = Dropout(0.5)(x)
+
+	# construct the CNN
+	model = Model(base_model.input, x)
+
+	for layer in model.layers:
+		layer.name = layer.name + str("_image")
+		layer.trainable = False
+
+	# return the CNN
+	return model
+
+def image_resNet(width, height, depth, filters=(16, 32, 64)): #(16, 32, 64, 128)
+	# initialize the input shape and channel dimension, assuming
+	# TensorFlow/channels-last ordering
+	inputShape = (height, width, depth)
+	chanDim = -1
+
+	# define the model input
+	inputs = Input(shape=inputShape)
+
+	base_model = ResNet50(weights='imagenet', include_top=False, input_shape=inputShape)
 	x = base_model.output
 	x = GlobalAveragePooling2D()(x)
 	x = Dense(1024, activation='relu')(x)  # we add dense layers so that the model can learn more complex functions and classify for better results.
