@@ -15,8 +15,8 @@ logger = logging.getLogger(__file__)
 
 
 # CNN multi input
-class CnnMultiInput:
-    def __init__(self, seed, dataset, saliency, run_name, stim_size, run_number):
+class CnnStackedFrames:
+    def __init__(self, seed, dataset, saliency, run_name, patch_size, run_number, num_patches):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
         self.trainMapsX, self.valMapsX, self.testMapsX, \
@@ -32,27 +32,27 @@ class CnnMultiInput:
         self.seed = seed
         self.batch_size = 64
         self.num_epochs = 60
-        self.stimSize = stim_size
+        self.patch_size = patch_size
         self.num_class = 10
+        self.num_patches = num_patches
+        self.lr = 0.00001
+        self.momentum = 0.9
+        self.decay_rate = self.lr / self.num_epochs
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.map_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
-        cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
-
-        # create the input to our final set of layers as the *output* of both CNNs
-        combinedInput = concatenate([cnn_map.output, cnn_image.output])
+        cnn_map = cnn.cnn_for_image_concat(self.patch_size, self.patch_size, self.channel * self.num_patches)
 
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
-        x = Dense(16, activation="relu")(combinedInput)
-        x = Dense(self.num_class, activation="softmax")(x)
+        x = Dense(self.num_class, activation="softmax")(cnn_map.output)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
-        self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        optimizer = optimizers.Adam(lr=0.00001)
+        self.model = Model(inputs=cnn_map.input, outputs=x)
+
+        optimizer = optimizers.SGD(lr=self.lr, momentum=self.momentum)
         self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
@@ -70,8 +70,8 @@ class CnnMultiInput:
         # train the model
         print("[INFO] training model...")
         self.history = self.model.fit(
-            [trainMapsX, trainImagesX], trainY,
-            validation_data=([valMapsX, valImagesX], valY),
+            trainMapsX, trainY,
+            validation_data=(valMapsX, valY),
             epochs=self.num_epochs, batch_size=self.batch_size)
 
 
@@ -104,7 +104,7 @@ class CnnMultiInput:
         # testPatchesX, testY = shuffle(testPatchesX, testY, random_state=seed)
 
         # model evaluate
-        results = self.model.evaluate([testMapsX, testImagesX], testY, batch_size=None)
+        results = self.model.evaluate(testMapsX, testY, batch_size=None)
         print('test loss, test acc:', results)
         results_df = pd.DataFrame(results, columns=[self.run_name + ", loss, acc"])
         results_df.to_csv(currpath + "/etp_data/processed/" + str(self.run_number) + "_results.csv", index=False)

@@ -9,6 +9,8 @@ from modules.models.simple_lstm import SimpleLstm
 from modules.models.svm import SVM
 from modules.models.cnn_lstm_img_concat import CnnLstmImgConcat
 from modules.models.cnn_multi_input import CnnMultiInput
+from modules.models.cnn_stacked_frames_input import CnnStackedFrames
+from modules.models.cnn_stacked_frames_image_concat import CnnStackedFramesImageConcat
 import os
 import yaml
 from datetime import datetime
@@ -135,14 +137,14 @@ def simple_lstm_model_run(stimArray, scanpath_df):
 
 def cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df):
     seed = 33
-    stimType = "Snack"
+    stimType = "Face"
     is_patch = False
     is_simple_lstm = False
     saliency = False
     is_colored_path = True
-    timePeriodMilisec = 50
+    timePeriodMilisec = 0
     currpath = os.getcwd()
-    run_name = "twoVGGnets_2303_coloredPath_snack_" + stimType
+    run_name = "imageNet_coloredPath_Batch1" + stimType
     run_number = datetime.now()
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
@@ -158,6 +160,56 @@ def cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df):
     cnn_multi_input.define_model()
     cnn_multi_input.train_model()
     cnn_multi_input.metrices(currpath)
+
+def cnn_stacked_frames_input_model_run(stimArray, scanpath_df):
+    seed = 33
+    stimType = "Face"
+    patch_size = 60
+    num_patches = 30
+    is_patch = True
+    is_simple_lstm = False
+    saliency = False
+    is_colored_path = False
+    currpath = os.getcwd()
+    run_name = "vgg16_stacked_frames_only" + stimType
+    run_number = datetime.now()
+    datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
+    scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
+                                                                                         stimType)
+
+    df = datasetbuilder.create_patches_dataset(currpath, scanpaths, images, labels, num_patches, patch_size, saliency)
+    df = datasetbuilder.create_stacked_frames_dataset(df)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
+    cnn_stacked_frames = CnnStackedFrames(seed, split_dataset, saliency, run_name, patch_size, run_number, num_patches)
+    # Build train and evaluate model
+    cnn_stacked_frames.define_model()
+    cnn_stacked_frames.train_model()
+    cnn_stacked_frames.metrices(currpath)
+
+def cnn_stacked_frames_image_concat_input_model_run(stimArray, scanpath_df):
+    seed = 33
+    stimType = "Face"
+    patch_size = 60
+    num_patches = 30
+    is_patch = True
+    is_simple_lstm = False
+    saliency = False
+    is_colored_path = False
+    currpath = os.getcwd()
+    run_name = "cnn_stacked_frames_vggNetImage_concat_" + stimType
+    run_number = datetime.now()
+    datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
+    scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
+                                                                                         stimType)
+
+    df = datasetbuilder.create_patches_dataset(currpath, scanpaths, images, labels, num_patches, patch_size, saliency)
+    df = datasetbuilder.create_stacked_frames_dataset(df)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
+    cnn_stacked_frames = CnnStackedFramesImageConcat(seed, split_dataset, saliency, run_name, stim_size, patch_size, run_number, num_patches)
+    # Build train and evaluate model
+    cnn_stacked_frames.define_model()
+    cnn_stacked_frames.train_model()
+    cnn_stacked_frames.metrices(currpath)
 
 
 def svm_run(stimArray, scanpath_df):
@@ -179,9 +231,9 @@ stimArray, scanpath_df_old, fixation_df_old = get_datasets("40")
 stimArray, scanpath_df_new, fixation_df_new = get_datasets("new")
 fixation_df = pd.concat([fixation_df_old, fixation_df_new])
 scanpath_df = pd.concat([scanpath_df_old, scanpath_df_new])
-cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df)
-#cnn_lstm_img_concat_model_run(stimArray, scanpath_df)
-
+#cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df)
+#cnn_stacked_frames_input_model_run(stimArray, scanpath_df)
+cnn_stacked_frames_image_concat_input_model_run(stimArray, scanpath_df)
 """
 def main():
     stimArray, scanpath_df, fixation_df = get_datasets()

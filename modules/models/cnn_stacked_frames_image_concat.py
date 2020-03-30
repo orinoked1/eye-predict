@@ -15,8 +15,8 @@ logger = logging.getLogger(__file__)
 
 
 # CNN multi input
-class CnnMultiInput:
-    def __init__(self, seed, dataset, saliency, run_name, stim_size, run_number):
+class CnnStackedFramesImageConcat:
+    def __init__(self, seed, dataset, saliency, run_name, stim_size, patch_size, run_number, num_patches):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
         self.trainMapsX, self.valMapsX, self.testMapsX, \
@@ -30,15 +30,20 @@ class CnnMultiInput:
         self.run_name = run_name
         self.run_number = run_number
         self.seed = seed
-        self.batch_size = 64
+        self.batch_size = 32
         self.num_epochs = 60
-        self.stimSize = stim_size
+        self.patch_size = patch_size
+        self.stim_size = stim_size
         self.num_class = 10
+        self.num_patches = num_patches
+        self.lr = 0.0001
+        self.momentum = 0.9
+        self.decay_rate = self.lr / self.num_epochs
 
     def define_model(self):
         # create the two CNN models
-        cnn_map = cnn.map_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
-        cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
+        cnn_map = cnn.cnn_for_image_concat(self.patch_size, self.patch_size, self.channel * self.num_patches)
+        cnn_image = cnn.image_vggNet(self.stim_size[0], self.stim_size[1], self.channel)
 
         # create the input to our final set of layers as the *output* of both CNNs
         combinedInput = concatenate([cnn_map.output, cnn_image.output])
@@ -52,7 +57,7 @@ class CnnMultiInput:
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[cnn_map.input, cnn_image.input], outputs=x)
 
-        optimizer = optimizers.Adam(lr=0.00001)
+        optimizer = optimizers.SGD(lr=self.lr, momentum=self.momentum)
         self.model.compile(loss='sparse_categorical_crossentropy', optimizer=optimizer, metrics=['sparse_categorical_accuracy'])
 
         print(self.model.summary())
@@ -108,28 +113,3 @@ class CnnMultiInput:
         print('test loss, test acc:', results)
         results_df = pd.DataFrame(results, columns=[self.run_name + ", loss, acc"])
         results_df.to_csv(currpath + "/etp_data/processed/" + str(self.run_number) + "_results.csv", index=False)
-
-        """
-        # make predictions on the testing data
-        predY = self.model.predict([testMapsX, testImagesX]).ravel()
-        fpr_keras, tpr_keras, thresholds_keras = roc_curve(testY, predY)
-
-        auc_keras = auc(fpr_keras, tpr_keras)
-
-        fig = plt.figure(1)
-        plt.plot([0, 1], [0, 1], 'k--')
-        plt.plot(fpr_keras, tpr_keras, label='Area Under Roc = {:.3f}'.format(auc_keras))
-        #plt.plot(fpr_rf, tpr_rf, label='RF (area = {:.3f})'.format(auc_rf))
-        plt.xlabel('False positive rate')
-        plt.ylabel('True positive rate')
-        plt.title('ROC curve')
-        plt.legend(loc='best')
-        fig.savefig(currpath + "/etp_data/processed/figs/" + self.run_name + "roc.pdf", bbox_inches='tight')
-        plt.show()
-
-        results_list = []
-        results_list.append(results)
-        results_list.append(auc_keras)
-        results_df = pd.DataFrame(results_list)
-        results_df.to_csv("cnn_multi_input_results_df.csv")
-        """

@@ -239,7 +239,7 @@ class DatasetBuilder:
         return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
 
 
-    def create_patches_dataset(self, currpath, scanpaths, images, labels, patch_size, saliency):
+    def create_patches_dataset(self, currpath, scanpaths, images, labels, num_patches, patch_size, saliency):
         print("Log.....Building patches")
         df = scanpaths.merge(images, on='sampleId').merge(labels,on='sampleId')
         sparse_indexes = self.find_sparse_samples(df, 2300)
@@ -257,7 +257,7 @@ class DatasetBuilder:
                 #scipy.misc.imsave("../../etp_data/processed/patches/" + "saliency_img.jpg", img)
             # Compute clusters Means through time
             fixations_centers = []
-            clusters = np.array_split(scanpath, 50)
+            clusters = np.array_split(scanpath, num_patches)
             for i in clusters:
                 center = np.mean(i, axis=0).round().astype(int)
                 fixations_centers.append(center)
@@ -267,8 +267,8 @@ class DatasetBuilder:
             for xi, yi in fixations_centers:
                 length = int(patch_size/2)
                 patch = img[yi - length: yi + length, xi - length: xi + length]
-                padx = 60 - patch.shape[0]
-                pady = 60 - patch.shape[1]
+                padx = patch_size - patch.shape[0]
+                pady = patch_size - patch.shape[1]
                 patch = cv2.copyMakeBorder(patch, 0, padx, 0, pady, cv2.BORDER_CONSTANT)
                 #scipy.misc.imsave("../../etp_data/processed/patches/" + str(patch_num) + "_patch_ORG.jpg", patch)
                 patch = patch/255
@@ -283,6 +283,13 @@ class DatasetBuilder:
         df = df[["sampleId", "patch", "img", "bins_bid"]]
 
         return df
+
+    def create_stacked_frames_dataset(self, df):
+        print("Log.... Stacking frames")
+        df['patch'] = df['patch'].apply(lambda x: np.concatenate(x, axis=2))
+        print(df['patch'][0].shape)
+        return df
+
 
     def get_scanpath_for_simple_lstm(self, scanpaths, images, labels):
         df = scanpaths.merge(images,on='sampleId').merge(labels,on='sampleId')
