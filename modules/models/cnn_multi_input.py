@@ -1,5 +1,5 @@
 import numpy
-from keras.layers import Dense
+from keras.layers import Dense, BatchNormalization
 from modules.models import cnn
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
@@ -10,6 +10,7 @@ from keras.models import Model
 import pandas as pd
 import logging
 from keras import optimizers
+from keras import initializers
 
 logger = logging.getLogger(__file__)
 
@@ -31,11 +32,12 @@ class CnnMultiInput:
         self.run_number = run_number
         self.seed = seed
         self.batch_size = 64
-        self.num_epochs = 60
+        self.num_epochs = 100
         self.stimSize = stim_size
         self.num_class = 10
 
     def define_model(self):
+        weightInit = initializers.RandomNormal(stddev=0.10, seed=self.seed)
         # create the two CNN models
         cnn_map = cnn.map_vggNet(self.stimSize[0], self.stimSize[1], self.channel)
         cnn_image = cnn.image_vggNet(self.stimSize[0], self.stimSize[1], self.channel)

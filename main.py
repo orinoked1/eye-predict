@@ -144,7 +144,7 @@ def cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df):
     is_colored_path = True
     timePeriodMilisec = 0
     currpath = os.getcwd()
-    run_name = "imageNet_coloredPath_Batch1" + stimType
+    run_name = "vggNet_biggerBatch64_" + stimType
     run_number = datetime.now()
     datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
     maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
@@ -231,9 +231,9 @@ stimArray, scanpath_df_old, fixation_df_old = get_datasets("40")
 stimArray, scanpath_df_new, fixation_df_new = get_datasets("new")
 fixation_df = pd.concat([fixation_df_old, fixation_df_new])
 scanpath_df = pd.concat([scanpath_df_old, scanpath_df_new])
-#cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df)
+cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df)
 #cnn_stacked_frames_input_model_run(stimArray, scanpath_df)
-cnn_stacked_frames_image_concat_input_model_run(stimArray, scanpath_df)
+#cnn_stacked_frames_image_concat_input_model_run(stimArray, scanpath_df)
 """
 def main():
     stimArray, scanpath_df, fixation_df = get_datasets()
