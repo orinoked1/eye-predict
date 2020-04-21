@@ -154,7 +154,7 @@ class DatasetBuilder:
         #plt.show()
         df['bins_bid'] = df.bins_bid -1
 
-        return df[["sampleId", "binary_bid"]]
+        return df[["sampleId", "bins_bid", "binary_bid"]]
 
     def find_sparse_samples(self, df, sparse_threshold):
         df['scanpath_len'] = 0
@@ -316,6 +316,7 @@ class DatasetBuilder:
                 df = pd.read_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_allData.pkl")
                 df['img'] = df['img'].apply(lambda x: x / 255)
         except:
+            print("Pickle not found")
             df = maps.merge(images, on='sampleId').merge(labels, on='sampleId').merge(scanpaths, on='sampleId')
             sparse_indexes = self.find_sparse_samples(df, 2300)
             df.drop(df.index[sparse_indexes], inplace=True)
@@ -354,5 +355,5 @@ class DatasetBuilder:
             df['img'] = df['img'].apply(lambda x: x / 255)
             df.to_pickle(os.getcwd() + "/etp_data/processed/colored_path_dataset_" + stimType + "_" + str(timePeriodMilisec) + "_milisec.pkl")
 
-        return df[["sampleId", "colored_path", "img", "bins_bid"]]
+        return df[["sampleId", "colored_path", "img", "binary_bid"]]
 
