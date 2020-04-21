@@ -154,7 +154,7 @@ class DatasetBuilder:
         #plt.show()
         df['bins_bid'] = df.bins_bid -1
 
-        return df[["sampleId", "bins_bid"]]
+        return df[["sampleId", "binary_bid"]]
 
     def find_sparse_samples(self, df, sparse_threshold):
         df['scanpath_len'] = 0
@@ -232,9 +232,9 @@ class DatasetBuilder:
         trainImagesX = np.asanyarray(train.img.tolist())
         valImagesX = np.asanyarray(val.img.tolist())
         testImagesX = np.asanyarray(test.img.tolist())
-        trainY = np.asanyarray(train.bins_bid.tolist())
-        valY = np.asanyarray(val.bins_bid.tolist())
-        testY = np.asanyarray(test.bins_bid.tolist())
+        trainY = np.asanyarray(train.binary_bid.tolist())
+        valY = np.asanyarray(val.binary_bid.tolist())
+        testY = np.asanyarray(test.binary_bid.tolist())
 
         return trainMapsX, valMapsX, testMapsX, trainImagesX, valImagesX, testImagesX, trainY, valY, testY
 

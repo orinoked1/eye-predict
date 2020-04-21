@@ -25,7 +25,7 @@ set_random_seed(2)
 path = os.getcwd()
 
 use_gpu = tf.test.is_gpu_available()
-print("use GPU?:",use_gpu )
+print("use GPU?:", use_gpu)
 
 def cnn_for_image_concat(width, height, depth):
 	# initialize the input shape and channel dimension, assuming
