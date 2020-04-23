@@ -53,23 +53,23 @@ class BinaryTwoStreamCnn:
         mapModel.add(Conv2D(16, kernel_size=(3, 3),
                          activation='relu',
                          input_shape=input_shape))
-        mapModel.add(Conv2D(32, (3, 3), activation='relu'))
+        #mapModel.add(Conv2D(32, (3, 3), activation='relu'))
         mapModel.add(MaxPooling2D(pool_size=(2, 2)))
-        mapModel.add(Dropout(0.25))
+        mapModel.add(Dropout(0.5))
         mapModel.add(Flatten())
-        mapModel.add(Dense(64, activation='relu'))
+        mapModel.add(Dense(8, activation='relu'))
         mapModel.add(Dropout(0.5))
         mapModel.add(Dense(self.num_class, activation='sigmoid'))
 
         imageModel = Sequential()
-        imageModel.add(Conv2D(16, kernel_size=(3, 3),
+        imageModel.add(Conv2D(32, kernel_size=(3, 3),
                             activation='relu',
                             input_shape=input_shape))
-        imageModel.add(Conv2D(32, (3, 3), activation='relu'))
+        imageModel.add(Conv2D(64, (3, 3), activation='relu'))
         imageModel.add(MaxPooling2D(pool_size=(2, 2)))
-        imageModel.add(Dropout(0.25))
+        imageModel.add(Dropout(0.5))
         imageModel.add(Flatten())
-        imageModel.add(Dense(64, activation='relu'))
+        imageModel.add(Dense(16, activation='relu'))
         imageModel.add(Dropout(0.5))
         imageModel.add(Dense(self.num_class, activation='sigmoid'))
 
@@ -83,14 +83,14 @@ class BinaryTwoStreamCnn:
 
         # our final FC layer head will have two dense layers, the final one
         # being our regression head
-        x = Dense(8, activation="relu")(combinedInput)
+        x = Dense(4, activation="relu")(combinedInput)
         x = Dense(self.num_class, activation="sigmoid")(x)
 
         # our final model will accept fixation map on one CNN
         # input and images on the second CNN input, outputting a single value as high or low bid (1/0)
         self.model = Model(inputs=[mapModel.input, imageModel.input], outputs=x)
 
-        optimizer = optimizers.SGD(lr=0.0001)
+        optimizer = optimizers.Adam(lr=0.0001)
         self.model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
         print(self.model.summary())
@@ -135,3 +135,15 @@ class BinaryTwoStreamCnn:
         plt.legend(['train', 'val'], loc='upper left')
         fig.savefig(currpath + "/etp_data/processed/figs/" + str(self.run_number) + "_train_val_loss.pdf", bbox_inches='tight')
         plt.show()
+
+        train_acc = self.history.history['accuracy']
+        dev_acc = self.history.history['val_accuracy']
+        train_loss = self.history.history['loss']
+        dev_loss = self.history.history['val_loss']
+
+        results_df = pd.DataFrame(train_acc, columns=[['train_acc']])
+        results_df['dev_acc'] = dev_acc
+        results_df['train_loss'] = train_loss
+        results_df['dev_loss'] = dev_loss
+        results_df.to_csv(currpath + "/etp_data/processed/" + str(self.run_number) + "_results.csv", index=False)
+        print('done')
