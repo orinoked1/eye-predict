@@ -2,6 +2,7 @@ import sys
 sys.path.append('../')
 import pandas as pd
 from modules.data.preprocessing import DataPreprocess
+from modules.data.visualization import DataVis
 from modules.data.datasets import DatasetBuilder
 from modules.data.stim import Stim
 from modules.models.cnn_lstm import CnnLstm
@@ -13,6 +14,7 @@ from modules.models.cnn_stacked_frames_input import CnnStackedFrames
 from modules.models.cnn_stacked_frames_image_concat import CnnStackedFramesImageConcat
 from modules.models.binary_simple_cnn import BinarySimpleCnn
 from modules.models.binary_two_stream_cnn import BinaryTwoStreamCnn
+from modules.models.binary_NN import BinaryNN
 import os
 import yaml
 from datetime import datetime
@@ -230,11 +232,13 @@ def svm_run(stimArray, scanpath_df):
 
 def binary_simple_cnn_run(stimArray, fixation_df, scanpath_df):
     seed = 33
+    patch_size = 60
+    num_patches = 30
     stimType = "Face"
     is_patch = False
     is_simple_lstm = False
     saliency = False
-    is_colored_path = True
+    is_colored_path = False
     timePeriodMilisec = 100
     currpath = os.getcwd()
     run_name = "binary_simple_cnn_" + stimType
@@ -244,10 +248,39 @@ def binary_simple_cnn_run(stimArray, fixation_df, scanpath_df):
                                                                                          stimType)
     scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
                                                                                          stimType)
-    df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType, timePeriodMilisec)
-    #df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
+    #df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType, timePeriodMilisec)
+    df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
+    #df = datasetbuilder.create_patches_dataset(currpath, scanpaths, images, labels, num_patches, patch_size, saliency)
+    #df = datasetbuilder.create_stacked_frames_dataset(df)
     split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm, is_colored_path)
-    binary_simple_cnn = BinarySimpleCnn(seed, split_dataset, saliency, run_name, stim_size, run_number)
+    binary_simple_cnn = BinarySimpleCnn(seed, split_dataset, saliency, run_name, stim_size, run_number, num_patches, patch_size)
+    # Build train and evaluate model
+    binary_simple_cnn.define_model()
+    binary_simple_cnn.train_model()
+    binary_simple_cnn.metrices(currpath)
+
+
+def binary_NN_run(stimArray, fixation_df, scanpath_df):
+    seed = 33
+    stimType = "Face"
+    is_patch = False
+    is_simple_lstm = False
+    saliency = False
+    is_colored_path = False
+    timePeriodMilisec = 100
+    currpath = os.getcwd()
+    run_name = "binary_simple_cnn_" + stimType
+    run_number = datetime.now()
+    datasetbuilder = DatasetBuilder([stimArray[0], stimArray[1]])
+    maps, images, labels, stim_size = datasetbuilder.load_fixations_related_datasets(currpath, fixation_df,
+                                                                                     stimType)
+    scanpaths, images, labels, stim_size = datasetbuilder.load_scanpath_related_datasets(currpath, scanpath_df,
+                                                                                         stimType)
+    # df = datasetbuilder.get_time_colored_dataset(scanpaths, maps, images, labels, stimType, timePeriodMilisec)
+    df = datasetbuilder.get_fixations_for_cnn(scanpaths, maps, images, labels)
+    split_dataset = datasetbuilder.train_test_val_split_stratify_by_subject(df, seed, is_patch, is_simple_lstm,
+                                                                            is_colored_path)
+    binary_simple_cnn = BinaryNN(seed, split_dataset, saliency, run_name, stim_size, run_number)
     # Build train and evaluate model
     binary_simple_cnn.define_model()
     binary_simple_cnn.train_model()
@@ -279,12 +312,15 @@ def binary_two_stream_run(stimArray, fixation_df, scanpath_df):
     binary_two_stream_cnn.metrices(currpath)
 
 
+
+
 stimArray, scanpath_df_old, fixation_df_old = get_datasets("40")
 stimArray, scanpath_df_new, fixation_df_new = get_datasets("new")
 fixation_df = pd.concat([fixation_df_old, fixation_df_new])
 scanpath_df = pd.concat([scanpath_df_old, scanpath_df_new])
 binary_two_stream_run(stimArray, fixation_df, scanpath_df)
 #binary_simple_cnn_run(stimArray, fixation_df, scanpath_df)
+#binary_NN_run(stimArray, fixation_df, scanpath_df)
 #cnn_multi_input_model_run(stimArray, fixation_df, scanpath_df)
 #cnn_stacked_frames_input_model_run(stimArray, scanpath_df)
 #cnn_stacked_frames_image_concat_input_model_run(stimArray, scanpath_df)

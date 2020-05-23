@@ -5,16 +5,18 @@ import pandas as pd
 import logging
 from keras import optimizers
 from keras.layers.convolutional import MaxPooling2D
+from keras.layers.convolutional import AveragePooling2D
 from keras.layers.core import Dropout
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D , Flatten
+from keras.layers import Dense, Conv2D, Flatten, BatchNormalization, MaxPool2D
+from keras import regularizers
 
 logger = logging.getLogger(__file__)
 
 
 # CNN multi input
 class BinarySimpleCnn:
-    def __init__(self, seed, dataset, saliency, run_name, stim_size, run_number):
+    def __init__(self, seed, dataset, saliency, run_name, stim_size, run_number, num_patches, patch_size):
         # fix random seed for reproducibility
         numpy.random.seed(seed)
         self.trainMapsX, self.valMapsX, self.testMapsX, \
@@ -28,24 +30,79 @@ class BinarySimpleCnn:
         self.run_name = run_name
         self.run_number = run_number
         self.seed = seed
-        self.batch_size = 32
+        self.batch_size = 64
         self.num_epochs = 100
         self.stimSize = stim_size
         self.num_class = 1
+        self.patch_size = patch_size
+        self.num_patches = num_patches
 
     def define_model(self):
         input_shape = (self.stimSize[1], self.stimSize[0], self.channel)
         model = Sequential()
         model.add(Conv2D(16, kernel_size=(3, 3),
+                            activation='relu',
+                            input_shape=input_shape))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.5))
+        model.add(Flatten())
+        model.add(Dense(8, activation='relu'))
+        model.add(Dropout(0.7))
+        model.add(Dense(self.num_class, activation='sigmoid'))
+
+        """
+        input_shape = (self.stimSize[1], self.stimSize[0], self.channel)
+        model = Sequential()
+        model.add(Conv2D(16, kernel_size=(3, 3),
                          activation='relu',
                          input_shape=input_shape))
-        #model.add(Conv2D(32, (3, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        model.add(Conv2D(32, (3, 3), activation='relu'))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
         model.add(Dropout(0.5))
         model.add(Flatten())
         model.add(Dense(8, activation='relu'))
         model.add(Dropout(0.5))
         model.add(Dense(self.num_class, activation='sigmoid'))
+        """
+
+        # adding regularization
+        #regularizer = regularizers.l2(0.01)
+
+        #for layer in model.layers:
+        #    for attr in ['kernel_regularizer']:
+        #        if hasattr(layer, attr):
+        #            setattr(layer, attr, regularizer)
+        """
+        input_shape = (self.patch_size, self.patch_size, self.channel * self.num_patches)
+        model = Sequential()
+        model.add(Conv2D(128, kernel_size=(3, 3),
+                         activation='relu',
+                         input_shape=input_shape))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        model.add(Conv2D(256, kernel_size=(3, 3),
+                         activation='relu', activity_regularizer=l1(0.001)))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        model.add(Conv2D(256, kernel_size=(3, 3),
+                         activation='relu', activity_regularizer=l1(0.001)))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        model.add(Conv2D(512, kernel_size=(3, 3),
+                         activation='relu', activity_regularizer=l1(0.001)))
+        model.add(BatchNormalization(axis=-1))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(self.num_class, activation='sigmoid'))
+        """
 
         self.model = model
 
