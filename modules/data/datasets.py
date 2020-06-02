@@ -13,6 +13,7 @@ from modules.data.stim import Stim
 import yaml
 import random
 from modules.data.preprocessing import DataPreprocess
+from keras.preprocessing import sequence
 
 
 class DatasetBuilder:
@@ -171,6 +172,7 @@ class DatasetBuilder:
 
     def load_labels_dataset(self, df):
         print("Log.....Loading labels")
+        df['bid'] = round(df['bid'] - 1, 2)
         df['binary_bid'] = pd.qcut(df.bid, 2, labels=[0, 1])
         df['binary_bid_n'] = pd.qcut(df.bid, 2, labels=[-1, 1])
         df['five_bins_bid'] = pd.qcut(df.bid, 5, labels=[0, 1, 2, 3, 4])
@@ -463,35 +465,80 @@ class DatasetBuilder:
 
             print("Log... Saving train, test datasets to json...")
             train.to_json(self.datapath + stimType + "train_set.json")
-            test.to_json(self.datapath  + stimType + "test_set.json")
+            test.to_json(self.datapath + stimType + "test_set.json")
 
         train, val = train_test_split(train, stratify=train[['subjectId']],
                                      test_size=0.10, random_state=seed)
 
+        train.reset_index(inplace=True)
+        val.reset_index(inplace=True)
+        test.reset_index(inplace=True)
+
+        print("Log... Train shape", train.shape)
+        print("Log... Val shape", val.shape)
+        print("Log... Test shape", test.shape)
+
         return train, val, test
 
-    def preper_data_for_model(self, df, stimType, is_scanpath, is_fixation, is_coloredpath,
-                              color_split, is_img):
+    def preper_data_for_model(self, df, stimType, scanpath_lan, is_scanpath, is_fixation, is_coloredpath,
+                              color_split, is_img, bin_count):
 
         for stim in self.stims_array:
             if stim.name == stimType:
                 stim_size = stim.size
         labels = self.load_labels_dataset(df)
+        X1 = None
         if is_scanpath:
             scanpaths = self.load_scanpath_dataset(df)
             final_df = scanpaths.merge(labels, on='sampleId')
+            X2 = np.asanyarray(final_df.scanpath.tolist())
+            X2 = sequence.pad_sequences(X2, maxlen=scanpath_lan)
+            #Normelize
+            X2 = (X2-X2.min())/(X2.max()-X2.min())
         if is_fixation:
             maps = self.load_fixation_maps_dataset(df)
             final_df = maps.merge(labels, on='sampleId')
+            X2 = np.asanyarray(final_df.fixationMap.tolist())
         if is_coloredpath:
             colorpath = self.get_time_colored_dataset(df, stimType, color_split)
             final_df = colorpath.merge(labels, on='sampleId')
+            X2 = np.asanyarray(final_df.colorpath.tolist())
         if is_img:
             images = self.load_images_dataset(self.imgpath, df, stim_size)
             final_df = final_df.merge(images, on='sampleId')
+            X1 = np.asanyarray(final_df.img.tolist())
+        if bin_count == 2:
+            Y = np.asanyarray(final_df.binary_bid.tolist())
+        elif bin_count == 5:
+            Y = np.asanyarray(final_df.five_bins_bid.tolist())
+        else:
+            Y = np.asanyarray(final_df.bid.tolist())
 
+        return X1, X2, Y, stim_size
 
-        return final_df
+    def get_train_dev_data_for_model_run(self, stimType, seed, scanpath_lan, color_split,
+                                                                                   is_scanpath,
+                                                                                   is_fixation,
+                                                                                   is_coloredpath,
+                                                                                   is_img, bin_count):
+        stims_array, scanpath_df, fixation_df = self.processed_data_loader()
+        train, val, test = self.train_test_val_split(stimType, scanpath_df, fixation_df, seed)
+        trainImg, trainX, trainY, stim_size = self.preper_data_for_model(train, stimType, scanpath_lan,
+                                                                                   is_scanpath,
+                                                                                   is_fixation,
+                                                                                   is_coloredpath,
+                                                                                   color_split, is_img, bin_count)
+        valImg, valX, valY, stim_size = self.preper_data_for_model(val, stimType, scanpath_lan,
+                                                                             is_scanpath,
+                                                                             is_fixation,
+                                                                             is_coloredpath, color_split,
+                                                                             is_img, bin_count)
+        testImg, testX, testY, stim_size = self.preper_data_for_model(test, stimType, scanpath_lan,
+                                                                                is_scanpath,
+                                                                                is_fixation,
+                                                                                is_coloredpath, color_split,
+                                                                                is_img, bin_count)
+        return trainImg, trainX, trainY, valImg, valX, valY, stim_size
 
 
 
