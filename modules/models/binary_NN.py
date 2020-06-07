@@ -16,7 +16,7 @@ logger = logging.getLogger(__file__)
 
 # CNN multi input
 class BinaryNN:
-    def __init__(self, seed, run_name, stim_size, scanpath_lan, stimType):
+    def __init__(self, seed, run_name, stim_size, scanpath_lan, stimType, bin_count):
         # fix random seed for reproducibility
         self.seed = seed
         numpy.random.seed(self.seed)
@@ -34,12 +34,14 @@ class BinaryNN:
         self.stimType = stimType
         self.input_type = 'scanpath'
         self.datapath = "/export/home/DATA/schonberglab/pycharm_eyePredict/etp_data/processed/"
+        self.corr = None
+        self.bin_count = bin_count
 
     def root_mean_squared_error(self, y_true, y_pred):
         return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
     def define_model(self):
-        input_shape = (self.scanpath_lan, 2)
+        input_shape = (self.scanpath_lan, 3)
         model = Sequential()
         model.add(Flatten(input_shape=input_shape))
         #model.add(Dense(32, kernel_initializer=initializers.RandomNormal(), activation='relu'))
@@ -76,8 +78,10 @@ class BinaryNN:
         testX, testY = shuffle(testX, testY, random_state=self.seed)
 
         print('[INFO] Evaluate on test data')
-        results = self.model.evaluate(testX, testY, batch_size=self.batch_size)
-        print('test loss, test acc:', results)
+        y_pred = self.model.predict(testX)
+        y_pred = y_pred.flatten()
+        self.corr = numpy.corrcoef(y_pred, testY)
+        print(self.corr)
 
 
     def metrices(self):
@@ -103,32 +107,24 @@ class BinaryNN:
         fig.savefig(self.datapath + "figs/" + str(self.run_name) + "_train_val_loss.pdf", bbox_inches='tight')
         plt.show()
 
-        train_acc = self.history.history['accuracy']
-        dev_acc = self.history.history['val_accuracy']
+        dev_corr = self.corr[0][1]
         train_loss = self.history.history['loss']
         dev_loss = self.history.history['val_loss']
-
-        results_df = pd.DataFrame(train_acc, columns=[['train_acc']])
-        results_df['dev_acc'] = dev_acc
-        results_df['train_loss'] = train_loss
-        results_df['dev_loss'] = dev_loss
-        results_df.to_csv(self.datapath + str(self.run_name) + "_results.csv", index=False)
 
         stringlist = []
         self.model.summary(print_fn=lambda x: stringlist.append(x))
         short_model_summary = "\n".join(stringlist)
         print(short_model_summary)
 
-        resultsDF = pd.read_csv(self.datapath + "binary_nn_results.csv")
+        resultsDF = pd.read_csv(self.datapath + "feedForwardNet_results.csv")
         model_to_append = [str(self.run_name), self.batch_size, self.num_epochs, self.LR,
                            self.seed, self.stimType, self.optimizer, self.loss_function, self.input_type,
-                           self.scanpath_lan, short_model_summary,
-                           max(train_acc), max(dev_acc), min(train_loss),
+                           self.scanpath_lan, self.bin_count, short_model_summary, dev_corr, min(train_loss),
                            min(dev_loss)]
 
         a_series = pd.Series(model_to_append, index=resultsDF.columns)
         resultsDF = resultsDF.append(a_series, ignore_index=True)
-        resultsDF.to_csv(self.datapath + "binary_nn_results.csv", index=False)
+        resultsDF.to_csv(self.datapath + "feedForwardNet_results.csv", index=False)
 
 
         print('done')

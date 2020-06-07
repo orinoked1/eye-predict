@@ -44,11 +44,11 @@ def run_binary_nn_model(seed, stimType, bin_count):
                                                         , bin_count)
 
     run_name = datetime.datetime.now()
-    binary_nn = BinaryNN(seed, run_name, stim_size, scanpath_lan, stimType)
+    binary_nn = BinaryNN(seed, run_name, stim_size, scanpath_lan, stimType, bin_count)
     # Build train and evaluate model
     binary_nn.define_model()
     binary_nn.train_model(trainX, trainY, valX, valY)
-    #binary_nn.test_model(testX, testY)
+    binary_nn.test_model(valX, valY)
     binary_nn.metrices()
 
     return
@@ -74,7 +74,7 @@ def run_simple_cnn_model(seed, stimType):
     # Build train and evaluate model
     binary_simple_cnn.define_model()
     binary_simple_cnn.train_model(trainX, trainY, valX, valY)
-    # binary_simple_cnn.test_model(testX, testY)
+    binary_simple_cnn.test_model(valX, valY)
     binary_simple_cnn.metrices()
 
     return
@@ -83,6 +83,8 @@ def run_simple_cnn_model(seed, stimType):
 
 #seed = 10101
 stimType = "Face"
-bin_count = 2
-for seed in range(20120, 20130):
+
+#for bin_count in [2, 5, 10]:
+bin_count = 5
+for seed in range(20129, 20130):
     run_binary_nn_model(seed, stimType, bin_count)

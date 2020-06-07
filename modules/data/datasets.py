@@ -493,8 +493,15 @@ class DatasetBuilder:
             final_df = scanpaths.merge(labels, on='sampleId')
             X2 = np.asanyarray(final_df.scanpath.tolist())
             X2 = sequence.pad_sequences(X2, maxlen=scanpath_lan)
-            #Normelize
-            X2 = (X2-X2.min())/(X2.max()-X2.min())
+            # Normelize
+            X2 = (X2 - X2.min()) / (X2.max() - X2.min())
+            index = [i for i in range(X2.shape[1])]
+            X2_indexed = []
+            for x in X2:
+                x = np.insert(x, 0, index, axis=1)
+                X2_indexed.append(x)
+            X2 = np.asanyarray(X2_indexed)
+            X2 = np.round(X2, 3)
         if is_fixation:
             maps = self.load_fixation_maps_dataset(df)
             final_df = maps.merge(labels, on='sampleId')

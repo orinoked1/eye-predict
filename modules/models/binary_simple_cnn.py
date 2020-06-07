@@ -78,8 +78,11 @@ class BinarySimpleCnn:
         testX, testY = shuffle(testX, testY, random_state=self.seed)
 
         print('[INFO] Evaluate on test data')
-        results = self.model.evaluate(testX, testY, batch_size=self.batch_size)
-        print('test loss, test acc:', results)
+        y_pred = self.model.predict(testX)
+        corr = numpy.corrcoef(y_pred, testY)
+        print(corr)
+        #results = self.model.evaluate(testX, testY, batch_size=self.batch_size)
+        #print('test loss, test acc:', results)
 
 
     def metrices(self):
