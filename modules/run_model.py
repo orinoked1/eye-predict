@@ -1,6 +1,7 @@
 from modules.data.datasets import DatasetBuilder
 #from modules.models.torch_nn import TorchNn
 from modules.models.binary_NN import BinaryNN
+from modules.models.linear_regression_torch import linearRegressionModel
 from modules.models.binary_simple_cnn import BinarySimpleCnn
 import datetime
 
@@ -26,7 +27,7 @@ testImg, testX, testY, stim_size = datasetbuilder.preper_data_for_model(test, st
                                                                   is_fixation=False,
                                                                   is_coloredpath=False, color_split=110, is_img=False)
 """
-def run_binary_nn_model(seed, stimType, bin_count):
+def run_binary_nn_model(seed, stimType, bin_count, stims_array, scanpath_df, fixation_df):
 
     scanpath_lan = 3000
     color_split = None
@@ -35,8 +36,9 @@ def run_binary_nn_model(seed, stimType, bin_count):
     is_coloredpath = False
     is_img = False
 
+
     trainImg, trainX, trainY, valImg, valX, valY, stim_size = \
-        datasetbuilder.get_train_dev_data_for_model_run(stimType, seed, scanpath_lan, color_split,
+        datasetbuilder.get_train_dev_data_for_model_run(stims_array, scanpath_df, fixation_df, stimType, seed, scanpath_lan, color_split,
                                                                                        is_scanpath,
                                                                                        is_fixation,
                                                                                        is_coloredpath,
@@ -50,6 +52,8 @@ def run_binary_nn_model(seed, stimType, bin_count):
     binary_nn.train_model(trainX, trainY, valX, valY)
     binary_nn.test_model(valX, valY)
     binary_nn.metrices()
+
+    print('zzz')
 
     return
 
@@ -79,12 +83,42 @@ def run_simple_cnn_model(seed, stimType):
 
     return
 
+def run_linearRegTorch_model(seed, stimType, bin_count, stims_array, scanpath_df, fixation_df):
+
+    scanpath_lan = 1000
+    color_split = None
+    is_scanpath = True
+    is_fixation = False
+    is_coloredpath = False
+    is_img = False
+
+
+    trainImg, trainX, trainY, valImg, valX, valY, stim_size = \
+        datasetbuilder.get_train_dev_data_for_model_run(stims_array, scanpath_df, fixation_df, stimType, seed, scanpath_lan, color_split,
+                                                                                       is_scanpath,
+                                                                                       is_fixation,
+                                                                                       is_coloredpath,
+                                                                                       is_img
+                                                        , bin_count)
+
+    run_name = datetime.datetime.now()
+    linearReg = linearRegressionModel(seed, run_name, stim_size, scanpath_lan, stimType, bin_count)
+    # Build train and evaluate model
+    linearReg.define_model(trainX)
+    linearReg.train_model(trainX, trainY, valX, valY)
+    linearReg.test_model(trainX, trainY)
+    linearReg.metrices(trainY)
+    return
+
+
 #2 bin -> 10 bin -> 5 bin -> 10 bin
 
-#seed = 10101
+#seed = 1010
+stims_array, scanpath_df, fixation_df =  datasetbuilder.load_data_pickle()
 stimType = "Face"
 
 #for bin_count in [2, 5, 10]:
 bin_count = 5
-for seed in range(20129, 20130):
-    run_binary_nn_model(seed, stimType, bin_count)
+for seed in range(20130, 20131):
+    #run_binary_nn_model(seed, stimType, bin_count, stims_array, scanpath_df, fixation_df)
+    run_linearRegTorch_model(seed, stimType, bin_count, stims_array, scanpath_df, fixation_df)

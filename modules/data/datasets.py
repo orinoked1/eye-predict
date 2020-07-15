@@ -493,15 +493,18 @@ class DatasetBuilder:
             final_df = scanpaths.merge(labels, on='sampleId')
             X2 = np.asanyarray(final_df.scanpath.tolist())
             X2 = sequence.pad_sequences(X2, maxlen=scanpath_lan)
+            ###### add indexing column per x,y coordinates ######
+            #index = [i for i in range(X2.shape[1])]
+            #X2_indexed = []
+            #for x in X2:
+            #    x = np.insert(x, 0, index, axis=1)
+            #    X2_indexed.append(x)
+            #X2 = np.asanyarray(X2_indexed)
             # Normelize
             X2 = (X2 - X2.min()) / (X2.max() - X2.min())
-            index = [i for i in range(X2.shape[1])]
-            X2_indexed = []
+            ##### shuffel fixations order #########
             for x in X2:
-                x = np.insert(x, 0, index, axis=1)
-                X2_indexed.append(x)
-            X2 = np.asanyarray(X2_indexed)
-            X2 = np.round(X2, 3)
+                np.random.shuffle(x)
         if is_fixation:
             maps = self.load_fixation_maps_dataset(df)
             final_df = maps.merge(labels, on='sampleId')
@@ -521,14 +524,14 @@ class DatasetBuilder:
         else:
             Y = np.asanyarray(final_df.bid.tolist())
 
-        return X1, X2, Y, stim_size
+        return X1, X2, np.reshape(Y, (Y.shape[0], 1)), stim_size
 
-    def get_train_dev_data_for_model_run(self, stimType, seed, scanpath_lan, color_split,
+    def get_train_dev_data_for_model_run(self, stims_array, scanpath_df, fixation_df, stimType, seed, scanpath_lan, color_split,
                                                                                    is_scanpath,
                                                                                    is_fixation,
                                                                                    is_coloredpath,
                                                                                    is_img, bin_count):
-        stims_array, scanpath_df, fixation_df = self.processed_data_loader()
+
         train, val, test = self.train_test_val_split(stimType, scanpath_df, fixation_df, seed)
         trainImg, trainX, trainY, stim_size = self.preper_data_for_model(train, stimType, scanpath_lan,
                                                                                    is_scanpath,
@@ -547,6 +550,10 @@ class DatasetBuilder:
                                                                                 is_img, bin_count)
         return trainImg, trainX, trainY, valImg, valX, valY, stim_size
 
+    def load_data_pickle(self):
+        stims_array, scanpath_df, fixation_df = self.processed_data_loader()
+
+        return stims_array, scanpath_df, fixation_df
 
 
 

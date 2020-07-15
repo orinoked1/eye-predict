@@ -44,17 +44,17 @@ class BinaryNN:
         input_shape = (self.scanpath_lan, 3)
         model = Sequential()
         model.add(Flatten(input_shape=input_shape))
-        #model.add(Dense(32, kernel_initializer=initializers.RandomNormal(), activation='relu'))
+        model.add(Dense(64, activation='relu'))
         #model.add(Dropout(0.5))
-        model.add(Dense(64, activation='relu', activity_regularizer=regularizers.l1(1e-5)))
+        #model.add(Dense(64, activation='linear'))
         #model.add(Dropout(0.5))
-        model.add(Dense(32, activation='relu', activity_regularizer=regularizers.l1(1e-5)))
+        model.add(Dense(32, activation='relu'))
         #model.add(Dropout(0.5))
         model.add(Dense(self.num_class, activation='linear'))
 
         self.model = model
         self.optimizer = optimizers.SGD(lr=self.LR)
-        self.loss_function = self.root_mean_squared_error
+        self.loss_function = "mean_absolute_error"
         self.model.compile(loss=self.loss_function, optimizer=self.optimizer, metrics=['accuracy'])
 
         print(self.model.summary())
@@ -62,6 +62,10 @@ class BinaryNN:
         return
 
     def train_model(self, trainX, trainY, valX, valY):
+        #trainX = shuffle(trainX, random_state=self.seed)
+        #valX = shuffle(valX, random_state=self.seed)
+        #trainY = shuffle(trainY, random_state=123)
+        #valY = shuffle(valY, random_state=1112)
         # shuffle data
         trainX, trainY = shuffle(trainX, trainY, random_state=self.seed)
         valX, valY = shuffle(valX, valY, random_state=self.seed)
@@ -85,6 +89,7 @@ class BinaryNN:
 
 
     def metrices(self):
+        """
         # plot metrics
         # summarize history for accuracy
         fig = plt.figure(2)
@@ -106,7 +111,7 @@ class BinaryNN:
         plt.legend(['train', 'val'], loc='upper left')
         fig.savefig(self.datapath + "figs/" + str(self.run_name) + "_train_val_loss.pdf", bbox_inches='tight')
         plt.show()
-
+        """
         dev_corr = self.corr[0][1]
         train_loss = self.history.history['loss']
         dev_loss = self.history.history['val_loss']
