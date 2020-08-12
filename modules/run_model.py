@@ -85,7 +85,7 @@ def run_simple_cnn_model(seed, stimType):
 
 def run_linearRegTorch_model(seed, stimType, bin_count, stims_array, scanpath_df, fixation_df):
 
-    scanpath_lan = 1000
+    scanpath_lan = 300
     color_split = None
     is_scanpath = True
     is_fixation = False

@@ -18,6 +18,7 @@ from modules.models.binary_NN import BinaryNN
 import os
 import yaml
 from datetime import datetime
+import numpy as np
 
 def get_datasets(x_subjects):
     path = os.getcwd()
@@ -312,7 +313,20 @@ def binary_two_stream_run(stimArray, fixation_df, scanpath_df):
     binary_two_stream_cnn.metrices(currpath)
 
 
-
+print("Log... processing raw data to csv")
+both_eye_data_path = data.read_eyeTracking_data_both_eye_recorded(False)
+one_eye_data_path = data.read_eyeTracking_data_one_eye_recorded(False)
+both_eye_data = pd.read_csv(path + "/etp_data/processed/40_subjects_both_eye_data.csv") #(both_eye_data_path)
+one_eye_data = pd.read_csv(path + "/etp_data/processed/" + x_subjects + "_subjects_one_eye_data.csv") #(one_eye_data_path)
+all_data = pd.concat([both_eye_data, one_eye_data])
+print("Log... reading raw data csv")
+both_eye_data = pd.read_csv(os.getcwd() + "/etp_data/processed/40_subjects_both_eye_data.csv") #(both_eye_data_path)
+one_eye_data = pd.read_csv(os.getcwd() + "/etp_data/processed/40_subjects_one_eye_data.csv") #(one_eye_data_path)
+#both_eye_data_b = pd.read_csv(os.getcwd() + "/etp_data/processed/126_138_both_eye_data.csv") #(both_eye_data_path)
+#one_eye_data_b = pd.read_csv(os.getcwd() + "/etp_data/processed/126_138_one_eye_data.csv") #(one_eye_data_path)
+#all_data = pd.concat([both_eye_data_b, one_eye_data_b, both_eye_data, one_eye_data])
+all_data = pd.concat([both_eye_data, one_eye_data])
+x = np.sort(all_data.subjectID.unique())
 
 stimArray, scanpath_df_old, fixation_df_old = get_datasets("40")
 stimArray, scanpath_df_new, fixation_df_new = get_datasets("new")

@@ -8,8 +8,10 @@ exp:
     visualization_path: /etp_data/visualized_data/
     trial_start_str: TrialStart
     trial_end_str: ScaleStart
-    output_file_both_eye: /etp_data/processed/40_subjects_both_eye_data.csv
-    output_file_one_eye1: /etp_data/processed/40_subjects_one_eye_data.csv
+    output_file_both_eye: /etp_data/processed/subjects_169_174_fix_sacc_data.csv
+    output_file_one_eye1: /etp_data/processed/subjects_147_152_fix_sacc_data.csv
+    #output_file_both_eye: /etp_data/processed/subjects_129_146_both_eye_fix_sacc_data.csv
+    #output_file_one_eye1: /etp_data/processed/subjects_129_146_one_eye_fix_sacc_data.csv
     stimSnack:
       name: Snack
       id: 2

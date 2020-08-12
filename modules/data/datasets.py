@@ -19,11 +19,11 @@ from keras.preprocessing import sequence
 class DatasetBuilder:
 
     def __init__(self):
-        currpath = os.getcwd()
+        self.currpath = "/export/home/DATA/schonberglab/pycharm_eyePredict/modules/config/"
         self.datapath = "/export/home/DATA/schonberglab/pycharm_eyePredict/etp_data/processed/"
         self.imgpath = "/export/home/DATA/schonberglab/pycharm_eyePredict/etp_data/"
-        expconfig = "/experimentconfig.yaml"
-        with open(currpath + expconfig, 'r') as ymlfile:
+        expconfig = "experimentconfig.yaml"
+        with open(self.currpath + expconfig, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
 
         self.stimSnack = Stim(cfg['exp']['etp']['stimSnack']['name'], cfg['exp']['etp']['stimSnack']['id'],
@@ -39,7 +39,7 @@ class DatasetBuilder:
                               cfg['exp']['etp']['output_file_both_eye'],
                               cfg['exp']['etp']['output_file_one_eye1'], [self.stimSnack, self.stimFace])
         self.screen_resolution = cfg['exp']['etp']['screen_resolution']
-        self.fixation_only = False
+        self.fixation_only = True
 
 
     def get_fixation_dataset(self, data_df):
@@ -90,14 +90,14 @@ class DatasetBuilder:
         for sampleId in data_df.sampleId.unique():
             sample_data = []
             bid = data_df[data_df['sampleId'] == sampleId].bid.unique()
-            #subjectID = data_df[data_df['sampleId'] == sampleId].subjectID.unique()
+            subjectID = data_df[data_df['sampleId'] == sampleId].subjectID.unique()
             stimName = data_df[data_df['sampleId'] == sampleId].stimName.unique()
             stimType = data_df[data_df['sampleId'] == sampleId].stimType.unique()
             sample = data_df[data_df['sampleId'] == sampleId].sampleId.unique()
             scanpath = self.data_to_scanpath(data_df, sampleId)
             if type(scanpath) is not np.ndarray:
                 continue
-            #sample_data.append(subjectID[0])
+            sample_data.append(subjectID[0])
             sample_data.append(stimName[0])
             sample_data.append(stimType[0])
             sample_data.append(sample[0])
@@ -120,7 +120,7 @@ class DatasetBuilder:
         if len(x) | len(y) < 5:
             print('Scanpath data is None for sampleId: ', sampleId)
             return None
-        # scanpath.append(t)
+        scanpath.append(t)
         scanpath.append(x)
         scanpath.append(y)
 
@@ -424,25 +424,70 @@ class DatasetBuilder:
         return self.stims_array, scanpath_df
 
     def processed_data_loader(self):
-        print("Log... reading fixation and scanpath pickle's")
+        print("Log... reading fixation and scanpath json's")
         fixation_df = pd.read_pickle(self.datapath + "fixation_df_52_subjects.pkl")
         scanpath_df = pd.read_pickle(self.datapath + "scanpath_df_52_subjects.pkl")
 
         return self.stims_array, scanpath_df, fixation_df
 
-    def new_data_process(self, x_subjects):
+    def raw_data_tidying_for_fix_sacc_statistics(self):
+        try:
+            print("Log... Read data to json...")
+            fix_Df = pd.read_json(self.datapath + "fix_df_101_174_.json")
+            sacc_Df = pd.read_json(self.datapath + "sacc_df_101_174_.json")
+        except:
+            print("Log... reading raw data csv's")
+            data1 = pd.read_csv(self.datapath + "subjects_101_110_fix_sacc_data.csv")
+            data2 = pd.read_csv(self.datapath + "subjects_111_116_fix_sacc_data.csv")
+            data3 = pd.read_csv(self.datapath + "subjects_117_122_fix_sacc_data.csv")
+            data4 = pd.read_csv(self.datapath + "subjects_123_128_fix_sacc_data.csv")
+            data5 = pd.read_csv(self.datapath + "subjects_129_146_both_eye_fix_sacc_data.csv")
+            data6 = pd.read_csv(self.datapath + "subjects_129_146_one_eye_fix_sacc_data.csv")
+            data7 = pd.read_csv(self.datapath + "subjects_147_152_fix_sacc_data.csv")
+            data8 = pd.read_csv(self.datapath + "subjects_153_160_fix_sacc_data.csv")
+            data9 = pd.read_csv(self.datapath + "subjects_161_168_fix_sacc_data.csv")
+            data10 = pd.read_csv(self.datapath + "subjects_169_174_fix_sacc_data.csv")
+            all_data = pd.concat([data1, data2, data3, data4, data5, data6, data7, data8, data9, data10])
+            fix_Df, sacc_Df = self.data_process.data_tidying_for_analysis_fix_sacc(all_data, self.screen_resolution)
+            print("Log... Saving data to json...")
+            fix_Df.to_json(self.datapath + "fix_df_101_174" + "_.json")
+            sacc_Df.to_json(self.datapath + "sacc_df_101_174" + "_.json")
+
+        return fix_Df, sacc_Df
+
+    def raw_data_tidying(self):
+        try:
+            print("Log... reading tidy json")
+            tidy_data = pd.read_json(self.datapath + "tidy_data_101_174_.json")
+        except:
+            print("Log... reading raw data csv's")
+            data1 = pd.read_csv(self.datapath + "subjects_101_128_raw_data.csv")
+            data2 = pd.read_csv(self.datapath + "subjects_129_146_both_eye_raw_data.csv")
+            data3 = pd.read_csv(self.datapath + "subjects_129_146_one_eye_raw_data.csv")
+            data4 = pd.read_csv(self.datapath + "subjects_147_152_raw_data.csv")
+            data5 = pd.read_csv(self.datapath + "subjects_153_160_raw_data.csv")
+            data6 = pd.read_csv(self.datapath + "subjects_161_165_raw_data.csv")
+            data7 = pd.read_csv(self.datapath + "subjects_166_174_raw_data.csv")
+            all_data = pd.concat([data1, data2, data3, data4, data5, data6, data7])
+            tidy_data = self.data_process.data_tidying_for_dataset_building(all_data, self.screen_resolution)
+            print("Log... Saving data to json...")
+            tidy_data.to_json(self.datapath + "tidy_data_101_174" + "_.json")
+
+        #fixation_df = self.get_fixation_dataset(tidy_data)
+        # fixation_df.to_json(self.datapath + "fixation_df_101_174.json")
+        scanpath_df = self.get_scanpath_dataset(tidy_data)
+        scanpath_df.to_json(self.datapath + "scanpath_df_101_174.json")
+
+        return scanpath_df
+
+    def raw_data_process(self):
         print("Log... processing raw data to csv")
         both_eye_data_path = self.data_process.read_eyeTracking_data_both_eye_recorded(self.fixation_only)
-        one_eye_data_path = self.data_process.read_eyeTracking_data_one_eye_recorded(self.fixation_only)
-        both_eye_data = pd.read_csv(both_eye_data_path)
-        one_eye_data = pd.read_csv(one_eye_data_path)
-        all_data = pd.concat([both_eye_data, one_eye_data])
-        tidy_data = self.data_process.data_tidying_for_dataset_building(all_data, self.screen_resolution)
-        tidy_data.to_pickle(self.datapath + "tidy_data_" + x_subjects + "_subjects.pkl")
-        fixation_df = self.get_fixation_dataset(tidy_data)
-        scanpath_df = self.get_scanpath_dataset(tidy_data)
-        fixation_df.to_pickle(self.datapath + "fixation_df__" + x_subjects + "_subjects.pkl")
-        scanpath_df.to_pickle(self.datapath + "scanpath_df__" + x_subjects + "_subjects.pkl")
+        #one_eye_data_path = self.data_process.read_eyeTracking_data_one_eye_recorded(self.fixation_only)
+        #both_eye_data = pd.read_csv(both_eye_data_path)
+        #one_eye_data = pd.read_csv(one_eye_data_path)
+        #all_data = pd.concat([both_eye_data, one_eye_data])
+
 
     def train_test_val_split(self, stimType, scanpath_df, fixation_df, seed):
 
@@ -480,6 +525,17 @@ class DatasetBuilder:
 
         return train, val, test
 
+    def load_data_for_fix_sacc_statistics(self, stimType):
+        print("Log... reading fixation and scanpath json's")
+        fixation_event_data = pd.read_json(self.datapath + "fix_df_101_174_.json")
+        saccad_event_data = pd.read_json(self.datapath + "sacc_df_101_174_.json")
+
+        # select only stimType data
+        fixation_event_data = fixation_event_data[fixation_event_data["stimType"] == stimType]
+        saccad_event_data = saccad_event_data[saccad_event_data["stimType"] == stimType]
+
+        return fixation_event_data, saccad_event_data
+
     def preper_data_for_model(self, df, stimType, scanpath_lan, is_scanpath, is_fixation, is_coloredpath,
                               color_split, is_img, bin_count):
 
@@ -503,8 +559,8 @@ class DatasetBuilder:
             # Normelize
             X2 = (X2 - X2.min()) / (X2.max() - X2.min())
             ##### shuffel fixations order #########
-            for x in X2:
-                np.random.shuffle(x)
+            #for x in X2:
+            #    np.random.shuffle(x)
         if is_fixation:
             maps = self.load_fixation_maps_dataset(df)
             final_df = maps.merge(labels, on='sampleId')
@@ -550,10 +606,6 @@ class DatasetBuilder:
                                                                                 is_img, bin_count)
         return trainImg, trainX, trainY, valImg, valX, valY, stim_size
 
-    def load_data_pickle(self):
-        stims_array, scanpath_df, fixation_df = self.processed_data_loader()
-
-        return stims_array, scanpath_df, fixation_df
 
 
 

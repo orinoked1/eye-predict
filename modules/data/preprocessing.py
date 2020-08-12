@@ -16,7 +16,7 @@ class DataPreprocess:
         self.output_file_one_eye = output_file_one_eye
         self.stimarray = stimarray
 
-    def read_eyeTracking_data_both_eye_recorded(self, fixation_only):
+    def read_eyeTracking_data_both_eye_recorded(self, fixation_saccad_data):
         flag = 0
         path = os.getcwd()
         # Set directory name that contains output directory with asc and txt files
@@ -33,16 +33,16 @@ class DataPreprocess:
             tempList = ascFileName.split('_')
             subjectIntId = tempList[0]
             id = int(subjectIntId)
-            ### Hack for id - 101
-            if id == 102:
-                print('Excluded subjectId - 101')
+            # exclude partcipents
             if id in excluded_participents.exclude.values:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
             # Hack for reading new participents data only #####
-            if id <= 151:
+            if id < 169:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
+            if id > 174:
+                break
             ##################################################
             print('Log.....Getting Ascii file data - ' + ascFileName)
             ascFile = codecs.open(path + asc_directory + '//' + ascFileName, encoding='utf-8-sig')
@@ -81,8 +81,7 @@ class DataPreprocess:
                 glob.glob(path + txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
             txtpersonalData = pd.read_table(path + txt_directory + '//' + txtFilePersonalDataName)
             dominant_eye = txtpersonalData['dominant eye (1-right, 2-left)'].values[0]
-            if fixation_only:
-                allTrialsData = allTrialsData.drop([6], axis=1)
+            if fixation_saccad_data:
                 if dominant_eye == 1:
                     allTrialsData['dominant_eye'] = 'R'
                 else:
@@ -102,10 +101,10 @@ class DataPreprocess:
                 flag = 1
             allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
 
-        if fixation_only:
+        if fixation_saccad_data:
             #Rename columns
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
-                                       'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'dominant_eye']
+                                       'stimId', '0', '1', '2', '3', '4', '5', '6', 'dominant_eye']
         elif self.exp_name == 'weizmann':
             # Rename columns if needed
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
@@ -121,7 +120,7 @@ class DataPreprocess:
         # returns path for data csv file
         return data_csv_path
 
-    def read_eyeTracking_data_one_eye_recorded(self, fixation_only):
+    def read_eyeTracking_data_one_eye_recorded(self, fixation_saccad_data):
         flag = 0
         path = os.getcwd()
         # Set directory name that contains output directory with asc and txt files
@@ -142,9 +141,11 @@ class DataPreprocess:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
             # Hack for reading new participents data only #####
-            if id <= 151:
+            if id <= 128:
                 print('Excluded subjectId - ' + subjectIntId)
                 continue
+            if id > 146:
+                break
             ##################################################
             print('Log.....Getting Ascii file data - ' + ascFileName)
             ascFile = codecs.open(path + asc_directory + '//' + ascFileName, encoding='utf-8-sig')
@@ -152,8 +153,8 @@ class DataPreprocess:
             # Split data to columns and get only relevnt ones
             ascDf = pd.DataFrame(ascData, columns=['data'])
             ascDf = pd.DataFrame([x.split('\t') for x in list(ascDf['data'])])
-            if fixation_only:
-                ascDf = ascDf[[0, 1, 2, 3, 4, 5]]
+            if fixation_saccad_data:
+                ascDf = ascDf[[0, 1, 2, 3, 4, 5, 6]]
             else:
                 ascDf = ascDf[[0, 1, 2, 3]]
             print('Log.....Getting txt file data for subject id - ' + subjectIntId)
@@ -165,7 +166,7 @@ class DataPreprocess:
             # subjectId = txtData['subjectID'][0]
             print('Log.....Runing over all trials of subject id - ' + subjectIntId)
             # Run over all trials per user and merge the asc data with the txt data
-            for trial in range(5):
+            for trial in range(trialCount):
                 trial_str = 'Trial' + str(trial + 1).zfill(3)
                 indexStart = ascDf[ascDf[1].str.contains(indexStartStr, na=False) &
                                    ascDf[1].str.contains(trial_str, na=False)].index[0] + 1
@@ -197,11 +198,11 @@ class DataPreprocess:
                 flag = 1
             allSubjectsData = pd.concat([allSubjectsData, allTrialsData])
 
-        if fixation_only:
+        if fixation_saccad_data:
             # Rename columns if needed
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType',
-                                       'stimId', 'action', 'timeStamp', 'fix_duration', 'avg_X_axis', 'avg_Y_axis',
-                                       'avg_pupil_size', 'dominant_eye']
+                                       'stimId', '0', '1', '2', '3', '4',
+                                       '5', '6', '7']
         elif self.exp_name == 'weizmann':
             # Rename columns if needed
             allSubjectsData.columns = ['subjectID', 'trialNum', 'onsettime', 'stimName', 'bid', 'RT', 'stimType', 'stimId',
@@ -332,25 +333,36 @@ class DataPreprocess:
 
     def data_tidying_for_analysis_fix_sacc(self, df, screen_resolution):
         print('Log..... Data tidying')
-
+        screen_resolution = [int(x) for x in screen_resolution.split(',')]
         # Get relevant raw data for fixations and saccades
-        Efix_df = df[df['timeStamp'].str.contains('EFIX', na=False)]
+        Efix_df = df[df['0'].str.contains('EFIX', na=False)]
+
         Efix_df.dropna(inplace=True, axis=1)
-        fix_action = Efix_df["timeStamp"].str.split(expand=True)
+        fix_action = Efix_df["0"].str.split(expand=True)
         fix_df = pd.concat([fix_action, Efix_df], axis=1)
-        fix_df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'subjectID', 'trialNum', 'onsettime',
-                          'stimName', 'bid', 'RT', 'stimType', 'stimId', 'to_remove', 'E_timeStamp',
-                          'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size', 'dominant_eye']
+        """
+        fix_df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'subjectID',
+                          'trialNum', 'onsettime', 'stimName',
+                          'bid', 'RT', 'stimType', 'stimId', 'to_remove',  'E_timeStamp',
+                          'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size',
+                          'dominant_eye']
+        """
+        fix_df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'E_timeStamp',
+                          'duration', 'avg_X_axis', 'avg_Y_axis', 'avg_pupil_size',
+                          'RT', 'to_remove', 'bid', 'onsettime', 'stimId', 'stimName',
+                          'stimType',  'subjectID', 'trialNum']
+
         fix_df.drop(['to_remove1', 'to_remove'], inplace=True, axis=1)
         fix_df.reset_index(drop=True, inplace=True)
 
-        Esacc_df = df[df['timeStamp'].str.contains('ESACC', na=False)]
+        Esacc_df = df[df['0'].str.contains('ESACC', na=False)]
         Esacc_df.dropna(inplace=True, axis=1)
-        sacc_action = Esacc_df["timeStamp"].str.split(expand=True)
+        sacc_action = Esacc_df["0"].str.split(expand=True)
         sacc_df = pd.concat([sacc_action, Esacc_df], axis=1)
-        sacc_df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'subjectID', 'trialNum', 'onsettime',
-                           'stimName', 'bid', 'RT', 'stimType', 'stimId', 'to_remove', 'E_timeStamp',
-                           'duration', 'S_X_axis', 'S_Y_axis', 'E_X_axis', 'E_Y_axis', 'dominant_eye']
+        sacc_df.columns = ['action', 'eye', 'S_timeStamp', 'to_remove1', 'E_timeStamp',
+                           'duration', 'S_X_axis', 'S_Y_axis', 'E_X_axis', 'E_Y_axis',
+                           'RT', 'to_remove', 'bid', 'onsettime', 'stimId', 'stimName',
+                           'stimType', 'subjectID', 'trialNum']
         sacc_df.drop(['to_remove1', 'to_remove'], inplace=True, axis=1)
         sacc_df.reset_index(drop=True, inplace=True)
 
@@ -365,12 +377,14 @@ class DataPreprocess:
         # For each field update relevant type and clean not relevant data
         for field in df_fields:
             if field in fix_df.columns:
+                na1 = fix_df[fix_df.isnull().any(axis=1)]
                 print(field)
                 print(type(fix_df[field][0]))
-                if type(fix_df[field][0]) == str:
-                    fix_df[field] = fix_df[field].str.strip()
+                #if type(fix_df[field][0]) == str:
+                #    fix_df[field] = fix_df[field].str.strip()
                 fix_df[field] = pd.to_numeric(fix_df[field], errors='coerce')
                 fix_df[field] = fix_df[field].round()
+                na = fix_df[fix_df.isnull().any(axis=1)]
                 fix_df.dropna(inplace=True)
                 fix_df[field] = fix_df[field].astype(int)
                 fix_df.reset_index(drop=True, inplace=True)
@@ -384,13 +398,14 @@ class DataPreprocess:
             if field in sacc_df.columns:
                 print(field)
                 print(type(sacc_df[field][0]))
-                if type(sacc_df[field][0]) == str:
-                    sacc_df[field] = sacc_df[field].str.strip()
+                #if type(sacc_df[field][0]) == str:
+                #    sacc_df[field] = sacc_df[field].str.strip()
                 sacc_df[field] = pd.to_numeric(sacc_df[field], errors='coerce')
                 sacc_df[field] = sacc_df[field].round()
                 sacc_df.dropna(inplace=True)
                 sacc_df[field] = sacc_df[field].astype(int)
                 sacc_df.reset_index(drop=True, inplace=True)
+
 
         # In this section for each stim get the datapoints within the stim boundaries
         # For fixation dataset
@@ -405,8 +420,8 @@ class DataPreprocess:
                  (fix_df['avg_Y_axis'] >= min_y) & (fix_df['avg_Y_axis'] <= max_y)) == True]
 
             # Shifting x,y datapoint to start from (0,0) point
-            stimRegion_fix_df.X_axis = stimRegion_fix_df.X_axis - min_x
-            byRegion_fix_Df.Y_axis = stimRegion_fix_df.Y_axis - min_y
+            #stimRegion_fix_df.X_axis = stimRegion_fix_df.X_axis - min_x
+            #byRegion_fix_Df.Y_axis = stimRegion_fix_df.Y_axis - min_y
 
             # Appending all stims to one DataFrame
             if flag == 0:
