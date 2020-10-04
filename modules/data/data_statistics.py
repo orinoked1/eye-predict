@@ -18,7 +18,8 @@ stimType = "Face"
 #scanpath_lan = 3000
 
 
-fixation_event_data, saccad_event_data = datasetbuilder.load_data_for_fix_sacc_statistics(stimType)
+#fixation_event_data, saccad_event_data = datasetbuilder.load_data_for_fix_sacc_statistics(stimType)
+datasetbuilder.summery_statistics_features(stimType)
 print("p")
 
 def fix_bid_corr_by_subject(fixation_event_data):
@@ -392,8 +393,12 @@ def slope(x1, y1, x2, y2):
         m = (y2-y1)/(x2-x1)
     return m
 
-def euclidian_distance(x1, y1, z1, x2, y2, z2):
+def l2_distance(x1, y1, z1, x2, y2, z2):
     dist = np.sqrt(np.square(x1 - x2) + np.square(y1 - y2) + np.square(z1 - z2))
+    return dist
+
+def l1_distance(x1, y1, z1, x2, y2, z2):
+    dist = np.square(x1 - x2) + np.abs(y1 - y2) + np.abs(z1 - z2)
     return dist
 
 

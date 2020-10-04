@@ -1,3 +1,5 @@
+import abc
+
 import numpy as np
 import cv2
 import pandas as pd
@@ -605,6 +607,53 @@ class DatasetBuilder:
                                                                                 is_coloredpath, color_split,
                                                                                 is_img, bin_count)
         return trainImg, trainX, trainY, valImg, valX, valY, stim_size
+
+    @abc.abstractmethod
+    def l2_distance(x1, y1, z1, x2, y2, z2):
+        dist = np.sqrt(np.square(x1 - x2) + np.square(y1 - y2) + np.square(z1 - z2))
+        return dist
+
+    @abc.abstractmethod
+    def l1_distance(x1, y1, z1, x2, y2, z2):
+        dist = np.square(x1 - x2) + np.abs(y1 - y2) + np.abs(z1 - z2)
+        return dist
+
+    def summery_statistics_features(self, stimType):
+
+        fixation_event_data, saccad_event_data = self.load_data_for_fix_sacc_statistics(stimType)
+        saccad_event_data['diff_x1_x2'] = saccad_event_data.S_X_axis - saccad_event_data.E_X_axis
+        saccad_event_data['diff_y1_y2'] = saccad_event_data.S_Y_axis - saccad_event_data.E_Y_axis
+        saccad_event_data['avg_l2_dist'] = np.sqrt(np.square(saccad_event_data.diff_x1_x2) + np.square(saccad_event_data.diff_y1_y2))
+        #saccad_event_data['avg_l1_dist'] = np.abs(saccad_event_data.diff_x1_x2) + np.abs(saccad_event_data.diff_y1_y2)
+
+        x = fixation_event_data.groupby(['sampleId'])['duration'].mean().reset_index()
+        y = fixation_event_data.groupby(['sampleId'])['duration'].count().reset_index()
+        z = saccad_event_data.groupby(['sampleId'])['duration'].mean().reset_index()
+        t = saccad_event_data.groupby(['sampleId'])['duration'].count().reset_index()
+        a = x.join(z, how='inner', lsuffix='_fix', rsuffix='_sacc')
+        b = y.join(t, how='inner', lsuffix='_fix', rsuffix='_sacc')
+        c = a.join(b, how='inner', lsuffix='_a', rsuffix='_b')
+        c.drop(['sampleId_sacc_a', 'sampleId_fix_b', 'sampleId_sacc_b'], inplace=True, axis=1)
+        c.rename(columns={"sampleId_fix_a": "sampleId", "duration_fix_a": "avg_fix_duration", "duration_sacc_a": "avg_sacc_duration",
+                          "duration_fix_b": "fix_count", "duration_sacc_b": "sacc_count"}, inplace=True)
+        avg_l2_dist = saccad_event_data.groupby(['sampleId'])['avg_l2_dist'].mean().reset_index()
+        #avg_l1_dist = saccad_event_data.groupby(['sampleId'])['avg_l1_dist'].mean().reset_index()
+        e = c.join(avg_l2_dist, how='left',  rsuffix='_b')
+        #c = e.join(avg_l1_dist, how='left', rsuffix='_c')
+        e.drop(['sampleId_b'], inplace=True, axis=1)
+        e.reset_index(drop=True, inplace=True)
+        df = fixation_event_data[['sampleId', 'bid', 'subjectID', 'stimType', 'stimId', 'stimName']]
+        df.drop_duplicates(subset='sampleId', inplace=True)
+        df.sort_values(by=['sampleId'], inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        final_df = df.join(e, how='inner', rsuffix='_c')
+        final_df.drop(['sampleId_c'], inplace=True, axis=1)
+        final_df.reset_index(drop=True, inplace=True)
+
+
+        return final_df
+
+
 
 
 
