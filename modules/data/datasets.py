@@ -542,9 +542,12 @@ class DatasetBuilder:
 
         return fixation_event_data, saccad_event_data
 
-    def get_fixations_scanpath_df(self, df):
+    def get_fixations_scanpath_df(self, df, stimType):
         try:
-            fixations_scanpath_df = pd.read_pickle(self.datapath + "fixations_scanpath_df.pkl")
+            if stimType == 'Face':
+                fixations_scanpath_df = pd.read_pickle(self.datapath + "fixations_scanpath_df.pkl")
+            else:
+                fixations_scanpath_df = pd.read_pickle(self.datapath + "snack_fixations_scanpath_df.pkl")
         except:
             df.rename(columns={"S_timeStamp": "timeStamp", "avg_X_axis": "X_axis",
                                                 "avg_Y_axis": "Y_axis"}, inplace=True)
@@ -554,7 +557,7 @@ class DatasetBuilder:
             df.Y_axis = df.Y_axis - df.Y_axis.min()
 
             fixations_scanpath_df = self.get_scanpath_dataset(df)
-            fixations_scanpath_df.to_pickle(self.datapath + "fixations_scanpath_df.pkl")
+            fixations_scanpath_df.to_pickle(self.datapath + "snack_fixations_scanpath_df.pkl")
 
         return fixations_scanpath_df
 
