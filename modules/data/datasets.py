@@ -108,7 +108,7 @@ class DatasetBuilder:
             scanpath_dataset.append(sample_data)
 
         scanpath_df = pd.DataFrame(scanpath_dataset)
-        scanpath_df.columns = ['stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
+        scanpath_df.columns = ['subjectID', 'stimName', 'stimType', 'sampleId', 'scanpath', 'bid']
 
         return scanpath_df
 
@@ -119,7 +119,7 @@ class DatasetBuilder:
         t = data_df[data_df['sampleId'] == sampleId].timeStamp.astype(int)
         x = data_df[data_df['sampleId'] == sampleId].X_axis.astype(int)
         y = data_df[data_df['sampleId'] == sampleId].Y_axis.astype(int)
-        if len(x) | len(y) < 5:
+        if len(x) | len(y) < 2:
             print('Scanpath data is None for sampleId: ', sampleId)
             return None
         scanpath.append(t)
@@ -423,7 +423,7 @@ class DatasetBuilder:
         print("Log... reading scanpath df's")
         scanpath_df = pd.read_pickle(self.datapath + "scanpath_df_52_subjects.pkl")
 
-        return self.stims_array, scanpath_df
+        return scanpath_df
 
     def processed_data_loader(self):
         print("Log... reading fixation and scanpath json's")
@@ -490,6 +490,10 @@ class DatasetBuilder:
         #one_eye_data = pd.read_csv(one_eye_data_path)
         #all_data = pd.concat([both_eye_data, one_eye_data])
 
+    def participents_s_data(self):
+        print("Log... processing raw data to csv")
+        x = self.data_process.participents_data()
+
 
     def train_test_val_split(self, stimType, scanpath_df, fixation_df, seed):
 
@@ -537,6 +541,22 @@ class DatasetBuilder:
         saccad_event_data = saccad_event_data[saccad_event_data["stimType"] == stimType]
 
         return fixation_event_data, saccad_event_data
+
+    def get_fixations_scanpath_df(self, df):
+        try:
+            fixations_scanpath_df = pd.read_pickle(self.datapath + "fixations_scanpath_df.pkl")
+        except:
+            df.rename(columns={"S_timeStamp": "timeStamp", "avg_X_axis": "X_axis",
+                                                "avg_Y_axis": "Y_axis"}, inplace=True)
+
+            # Shifting x,y datapoint to start from (0,0) point
+            df.X_axis = df.X_axis - df.X_axis.min()
+            df.Y_axis = df.Y_axis - df.Y_axis.min()
+
+            fixations_scanpath_df = self.get_scanpath_dataset(df)
+            fixations_scanpath_df.to_pickle(self.datapath + "fixations_scanpath_df.pkl")
+
+        return fixations_scanpath_df
 
     def preper_data_for_model(self, df, stimType, scanpath_lan, is_scanpath, is_fixation, is_coloredpath,
                               color_split, is_img, bin_count):

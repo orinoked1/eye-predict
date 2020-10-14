@@ -454,3 +454,40 @@ class DataPreprocess:
         byRegion_sacc_Df.drop(byRegion_sacc_Df.columns[[0]], axis=1, inplace=True)
 
         return byRegion_fix_Df, byRegion_sacc_Df
+
+    def participents_data(self):
+        flag = 0
+        path = os.getcwd()
+        # Set directory name that contains output directory with asc and txt files
+        asc_directory = '/etp_data/Output'
+        txt_directory = '/etp_data/Output'
+        path = '/export/home/DATA/schonberglab/pycharm_eyePredict/'
+        excluded_participents = pd.read_table(path + txt_directory + '/' + 'excluded_participents.txt')
+        # Set string represents trail start data records
+        indexStartStr = self.trial_start_str  # 'TrialStart'
+        # Set string represents trail ends data records
+        indexEndStr = self.trial_end_str  # 'ScaleStart'
+        # Run over each Ascii file and open it
+        for ascFile in glob.glob(path + asc_directory + '//*personalDetails*'):
+            ascFileName = os.path.basename(ascFile)
+            tempList = ascFileName.split('_')
+            subjectIntId = tempList[0]
+            id = int(subjectIntId)
+            # exclude partcipents
+            #if id in excluded_participents.exclude.values:
+            #    print('Excluded subjectId - ' + subjectIntId)
+            #    continue
+            # get participent personal details
+            txtFilePersonalDataName = os.path.basename(
+                glob.glob(path + txt_directory + '//*' + subjectIntId + '_personalDetails' + '*txt')[0])
+            txtpersonalData = pd.read_table(path + txt_directory + '//' + txtFilePersonalDataName)
+
+            # Appending all data to one DataFrame
+            if flag == 0:
+                allSubjectsPersonalData = pd.DataFrame(columns=txtpersonalData.columns)
+                flag = 1
+            allSubjectsPersonalData = pd.concat([allSubjectsPersonalData, txtpersonalData])
+
+        # Store all subjects data DF as CSV
+        allSubjectsPersonalData.to_csv(path + 'etp_data/processed/' + 'participents_personal_data.csv')
+        print('p')

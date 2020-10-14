@@ -13,7 +13,7 @@ class DataVis:
                 self.stim = stim
         self.stimpath = stimpath
         self.vispath = vispath
-        self.currpath = os.getcwd()
+        self.currpath = '/export/home/DATA/schonberglab/pycharm_eyePredict'
 
     @staticmethod
     def stimulus(currpath, DATASET_NAME, STIMULUS_NAME):
@@ -52,7 +52,32 @@ class DataVis:
         toPlot = cv2.resize(toPlot, imgToPlot_size)
         fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
 
-        scipy.misc.imsave(self.currpath + self.vispath + 'fixationMapEX.jpg', fin)
+        scipy.misc.imsave(self.currpath + self.vispath + '5_10_2020_fixationMapEX.jpg', fin)
+
+        return
+
+    def map_with_clusters(self, FIXATION_MAP, imgToPlot_size, path, stimulus_name, clusters):
+        """
+        This functions visualize a specified stimulus adding the fixation map on top.
+        """
+
+        fixationMap = FIXATION_MAP['fixationMap'].sum()
+
+        stimulus = self.stimulus(self.currpath, path, stimulus_name)
+        toPlot = stimulus
+        fixation_map = fixationMap
+        fixation_map = np.pad(fixation_map, [(0, 1), (0, 1)], mode='constant')
+        fixation_map = cv2.cvtColor(np.uint8(fixation_map), cv2.COLOR_GRAY2RGB) * 255
+        toPlot = cv2.resize(toPlot, imgToPlot_size)
+        fin = cv2.addWeighted(fixation_map, 1, toPlot, 0.8, 0)
+        for cluster in clusters:
+            x = int(cluster[0])
+            y = int(cluster[1])
+            fin[x-5:x+5, y-5:y+5] = (255, 0, 0)
+
+        vis_img_name = '5_10_2020_fixationMapEX.jpg'
+
+        scipy.misc.imsave(self.currpath + self.vispath + vis_img_name, fin)
 
         return
 
@@ -167,5 +192,13 @@ class DataVis:
         self.map(fixation_sample.fixationMap.values[0], imgToPlot_size, self.stimpath, f_stimName)
         print('Log... visualizing scanpath')
         self.scanpath(scanpath_sample.scanpath, imgToPlot_size, self.stimpath, s_stimName, False)
+
+        return
+
+    def visualize_clusters(self, fixation_df, clusters, stimName):
+
+        imgToPlot_size = (self.stim.size[0], self.stim.size[1])
+
+        self.map_with_clusters(fixation_df, imgToPlot_size, self.stimpath, stimName, clusters)
 
         return
