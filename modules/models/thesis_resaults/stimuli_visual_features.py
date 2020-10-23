@@ -9,7 +9,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-stimType = 'Snack'
+stimType = 'Face'
 
 datasetbuilder = DatasetBuilder()
 fixation_event_data, saccad_event_data = datasetbuilder.load_data_for_fix_sacc_statistics(stimType)

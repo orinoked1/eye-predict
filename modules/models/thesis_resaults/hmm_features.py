@@ -10,6 +10,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from matplotlib import pyplot as plt
 import os
+import seaborn as sns
 
 
 stimType = 'Snack'
@@ -23,6 +24,14 @@ df['scanpath_len'] = 0
 for i in range(df.scanpath.size):
     df.at[i, 'scanpath_len'] = len(df.scanpath[i])
 df = df[df['scanpath_len'] > 5]
+
+# add the visual feature - ranking mean
+stim_avg = df.groupby(['stimName'])['bid'].mean().reset_index()
+stim_avg.rename(columns={'bid': 'avg'}, inplace=True)
+
+df = df.merge(stim_avg, how='left', on='stimName')
+avg_list = df['avg'].tolist()
+avg_list = np.array(avg_list).reshape(-1, 1)
 
 ### Compute one HMM per scanpath
 
@@ -97,9 +106,14 @@ for scanpath in df.scanpath:
     features = np.concatenate((prior, m, clusters_mean, variance), axis=0)
     feature_vectors.append(features)
 
-# x y split
+# dataframe for correlation heatmap
+data = pd.DataFrame(feature_vectors)
 
+# x y split
 x = np.asanyarray(feature_vectors)
+# add the ranking mean as a feature to the features list
+#x = np.concatenate((x, avg_list), axis=1)
+
 y = df[['bid']].values
 
 # linear regression
@@ -113,6 +127,23 @@ rmse = np.sqrt(np.square(np.subtract(y, predictions)).mean())
 model = sm.OLS(y, x)
 results = model.fit()
 print(results.summary())
+
+
+# calculate features correlations and make a seaborn heatmap
+corr = data.corr()
+fig = plt.figure(2)
+ax = sns.heatmap(
+    corr,
+    vmin=-1, vmax=1, center=0,
+    cmap=sns.diverging_palette(20, 220, n=200),
+    square=True)
+ax.set_xticklabels(
+    ax.get_xticklabels(),
+    rotation=45,
+    horizontalalignment='right')
+
+currpath = os.getcwd()
+fig.savefig(currpath + "/snack_hmm_features_heat_map.pdf", bbox_inches='tight')
 
 
 
