@@ -8,6 +8,10 @@ from sklearn import linear_model
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from scipy.stats.stats import pearsonr
+import os
+import matplotlib
+import matplotlib.pyplot as plt
 
 stimType = 'Face'
 
@@ -22,13 +26,32 @@ for i in range(df.scanpath.size):
 df = df[df['scanpath_len'] > 5]
 
 stim_avg = df.groupby(['stimName'])['bid'].mean().reset_index()
-stim_avg.rename(columns={'bid': 'avg'}, inplace=True)
+stim_avg.rename(columns={'bid': 'avg_bid'}, inplace=True)
 
 df = df.merge(stim_avg, how='left', on='stimName')
 
+# save df to csv
+df_to_save = df[['sampleId', 'subjectID', 'stimName', 'avg_bid', 'bid']]
+currpath = os.getcwd()
+df_to_save.to_csv(currpath + "/face_visual_features.csv")
+
 # x y split
-x = np.array(df.avg).reshape(-1, 1)
+x = np.array(df.avg_bid).reshape(-1, 1)
 y = np.array(df.bid).reshape(-1, 1)
+
+#corelation
+corr = pearsonr(x,y)
+
+
+matplotlib.style.use('ggplot')
+
+fig = plt.figure(0)
+plt.scatter(x, y)
+plt.title('Average ranking and actual ranking correlation')
+#plt.ylabel('accuracy')
+#plt.xlabel('epoch')
+fig.savefig(currpath + "/figs/corr.pdf")
+
 
 # linear regression
 linearModel = linear_model.LinearRegression()

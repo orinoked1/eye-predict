@@ -19,26 +19,10 @@ stimType = 'Face'
 datasetbuilder = DatasetBuilder()
 df = datasetbuilder.summery_statistics_features(stimType)
 
-df_to_save = df[['subjectID', 'stimName', 'avg_fix_duration', 'avg_sacc_duration', 'fix_count', 'sacc_count', 'avg_l2_dist', 'bid']]
+# save df to csv
+df_to_save = df[['sampleId', 'subjectID', 'stimName', 'avg_fix_duration', 'avg_sacc_duration', 'fix_count', 'sacc_count', 'avg_l2_dist', 'bid']]
 currpath = os.getcwd()
-df_to_save.to_csv(currpath + "/face_ss_features_scaled.csv")
-#Scale / Standardize the features
-df_to_save = np.array(df_to_save)
-sc = StandardScaler()
-df_to_save = sc.fit_transform(df_to_save)
-df_to_save = pd.DataFrame(df_to_save, columns=['avg_fix_duration', 'avg_sacc_duration', 'fix_count', 'sacc_count', 'avg_l2_dist', 'bid'])
-df_to_save = pd.merge(df, df_to_save)
-df_to_save = df_to_save[['subjectID', 'stimName', 'avg_fix_duration', 'avg_sacc_duration', 'fix_count',
-                 'sacc_count', 'avg_l2_dist', 'bid']]
-currpath = os.getcwd()
-df_to_save.to_csv(currpath + "/face_ss_features_scaled.csv")
-
-
-#for i, field in zip(range(df_to_save.shape[1]), df_to_save):
-#    fig = plt.figure(i)
-#    plt.hist(df_to_save[field])
-#    currpath = os.getcwd()
-#    fig.savefig(currpath + "/" + field + "_feature_dist.pdf", bbox_inches='tight')
+df_to_save.to_csv(currpath + "/face_ss_features.csv")
 
 
 # x y split

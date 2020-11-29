@@ -13,7 +13,7 @@ import os
 import seaborn as sns
 
 
-stimType = 'Snack'
+stimType = 'Face'
 
 datasetbuilder = DatasetBuilder()
 fixation_event_data, saccad_event_data = datasetbuilder.load_data_for_fix_sacc_statistics(stimType)
@@ -61,32 +61,32 @@ for scanpath in df.scanpath:
     # clusters mean as the states centers
     clusters_mean = kmeans.cluster_centers_.flatten()
     #normalize states centers
-    clusters_mean -= np.mean(clusters_mean)
-    if np.std(clusters_mean) == 0:
-        clusters_mean /= 1
-    else:
-        clusters_mean /= np.std(clusters_mean)
+    #clusters_mean -= np.mean(clusters_mean)
+    #if np.std(clusters_mean) == 0:
+    #    clusters_mean /= 1
+    #else:
+    #    clusters_mean /= np.std(clusters_mean)
     # get the states sequence
     sequence = kmeans.predict(twodScanpath)
     # create transition matrix for the sequence
     m = transition_matrix(sequence)
     m = np.asanyarray(m).flatten()
     # normalize states centers
-    m -= np.mean(m)
-    if np.std(m) == 0:
-        m /= 1
-    else:
-        m /= np.std(m)
+    #m -= np.mean(m)
+    #if np.std(m) == 0:
+    #    m /= 1
+    #else:
+    #    m /= np.std(m)
     # calculate states priors
     unique_elements, counts_elements = np.unique(sequence, return_counts=True)
     n = sequence.size
     prior = np.around(counts_elements/n, decimals=4).flatten()
     # normalize states centers
-    prior -= np.mean(prior)
-    if np.std(prior) == 0:
-        prior /= 1
-    else:
-        prior /= np.std(prior)
+    #prior -= np.mean(prior)
+    #if np.std(prior) == 0:
+    #    prior /= 1
+    #else:
+    #    prior /= np.std(prior)
     # calculate states variance
     seq = sequence.reshape(-1, 1)
     np_concat = np.concatenate((twodScanpath, seq), axis=1)
@@ -94,20 +94,36 @@ for scanpath in df.scanpath:
     variance = df_variance.groupby(['state']).var(ddof=0)
     variance = np.asanyarray(variance).flatten()
     # normalize states centers
-    type = variance.dtype.str
-    if type != '<f8':
-        variance = variance.astype(np.float64)
-    variance -= np.mean(variance)
-    if np.std(prior) == 0:
-        variance /= 1
-    else:
-        variance /= np.std(variance)
+    #type = variance.dtype.str
+    #if type != '<f8':
+    #    variance = variance.astype(np.float64)
+    #variance -= np.mean(variance)
+    #if np.std(prior) == 0:
+    #    variance /= 1
+    #else:
+    #    variance /= np.std(variance)
     # build one feature vector for all features
     features = np.concatenate((prior, m, clusters_mean, variance), axis=0)
     feature_vectors.append(features)
 
 # dataframe for correlation heatmap
 data = pd.DataFrame(feature_vectors)
+
+# save features df to csv
+df_to_save = df[['sampleId', 'subjectID', 'stimName', 'bid']]
+df_to_save = df_to_save.merge(data, how='left', left_index=True, right_index=True)
+df_to_save.rename(columns={0: 'praior_s1', 1: 'praior_s2', 2: 'praior_s3',
+                           3: 'p_s1_to_s1', 4: 'p_s1_to_s2', 5: 'p_s1_to_s3',
+                           6: 'p_s2_to_s1', 7: 'p_s2_to_s2', 8: 'p_s2_to_s3',
+                           9: 'p_s3_to_s1', 10: 'p_s3_to_s2', 11: 'p_s3_to_s3',
+                           12: 'mean_s1_x', 13: 'mean_s1_y',
+                           14: 'mean_s2_x', 15: 'mean_s2_y',
+                           16: 'mean_s3_x', 17: 'mean_s3_y',
+                           18: 'var_s1_x', 19: 'var_s1_y',
+                           20: 'var_s2_x', 21: 'var_s2_y',
+                           22: 'var_s3_x', 23: 'var_s3_y'}, inplace=True)
+currpath = os.getcwd()
+df_to_save.to_csv(currpath + "/face_hmm_features_not_scaled.csv")
 
 # x y split
 x = np.asanyarray(feature_vectors)
