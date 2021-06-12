@@ -1,12 +1,12 @@
 import numpy
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LSTM
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
-from keras.preprocessing import sequence
+from tensorflow.keras.preprocessing import sequence
 
 
 # SIMPLE LSTM for sequence classification

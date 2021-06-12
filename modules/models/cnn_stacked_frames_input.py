@@ -1,15 +1,15 @@
 import numpy
-from keras.layers import Dense
+from tensorflow.keras.layers import Dense
 from modules.models import cnn
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
-from keras.layers import concatenate
-from keras.models import Model
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.models import Model
 import pandas as pd
 import logging
-from keras import optimizers
+from tensorflow.keras import optimizers
 
 logger = logging.getLogger(__file__)
 

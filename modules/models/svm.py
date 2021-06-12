@@ -1,4 +1,4 @@
-from keras.preprocessing import sequence
+from tensorflow.keras.preprocessing import sequence
 from sklearn.model_selection import KFold
 from sklearn import svm
 import numpy

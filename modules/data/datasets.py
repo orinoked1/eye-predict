@@ -8,14 +8,14 @@ from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 import scipy.misc
 import os
 from modules.data.stim import Stim
 import yaml
 import random
 from modules.data.preprocessing import DataPreprocess
-from keras.preprocessing import sequence
+from tensorflow.keras.preprocessing import sequence
 
 
 class DatasetBuilder:

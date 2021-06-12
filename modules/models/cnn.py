@@ -1,19 +1,19 @@
 import os
-from keras.layers.normalization import BatchNormalization
-from keras.layers.convolutional import Conv2D
-from keras.layers.convolutional import MaxPooling2D
-from keras.layers.core import Activation
-from keras.layers.core import Dropout
-from keras.layers.core import Dense
-from keras.layers import Flatten
-from keras.layers import Input
-from keras.models import Model
-from keras.applications import VGG16
-from keras.applications import ResNet50
-from keras.layers import GlobalAveragePooling2D
-from keras.models import Sequential
-from keras.layers import Dense, Conv2D, MaxPool2D , Flatten
-from keras import initializers
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.layers import GlobalAveragePooling2D
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D , Flatten
+from tensorflow.keras import initializers
 
 import tensorflow as tf
 """

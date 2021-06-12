@@ -3,13 +3,13 @@ from sklearn.utils import shuffle
 from matplotlib import pyplot as plt
 import pandas as pd
 import logging
-from keras import optimizers
-from keras.layers.convolutional import MaxPooling2D
-from keras.layers.convolutional import AveragePooling2D
-from keras.layers.core import Dropout
-from keras.models import Sequential
-from keras.layers import Dense, Conv2D, Flatten, BatchNormalization, MaxPool2D
-from keras import regularizers
+from tensorflow.keras import optimizers
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import AveragePooling2D
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, BatchNormalization, MaxPool2D
+from tensorflow.keras import regularizers
 
 logger = logging.getLogger(__file__)
 

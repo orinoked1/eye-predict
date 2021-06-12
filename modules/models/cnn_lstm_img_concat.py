@@ -1,15 +1,15 @@
 import numpy
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import TimeDistributed
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import TimeDistributed
 from modules.models import cnn
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
-from keras.layers import concatenate
-from keras.models import Model
-from keras import optimizers
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.models import Model
+from tensorflow.keras import optimizers
 
 
 # CNN LSTM image concatenation for sequence classification

@@ -1,8 +1,8 @@
 import numpy
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import TimeDistributed
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import TimeDistributed
 from modules.models import cnn
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve
